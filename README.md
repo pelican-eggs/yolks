@@ -37,6 +37,13 @@ is tagged correctly.
     * `ghcr.io/parkervcp/yolks:cassandra_java11_python2`
   * [`cassandra_java11_python3`](/cassandra/cassandra_java11_python3)
     * `ghcr.io/parkervcp/yolks:cassandra_java11_python3`
+### [DotNet](/dotnet)
+  * [`dotnet2.1`](/dotnet/2.1)
+    * `ghcr.io/parkervcp/yolks:dotnet_2.1`
+  * [`dotnet3.1`](/dotnet/3.1)
+    * `ghcr.io/parkervcp/yolks:dotnet_3.1`
+  * [`dotnet5.0`](/dotnet/5.0)
+    * `ghcr.io/parkervcp/yolks:dotnet_5.0`        
 ### [Erlang](/erlang)
   * [`erlang22`](/erlang/22)
     * `ghcr.io/parkervcp/yolks:erlang_22`
