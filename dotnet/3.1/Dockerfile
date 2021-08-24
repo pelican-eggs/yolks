@@ -1,4 +1,4 @@
-FROM    debian:buster-slim
+FROM    ghcr.io/parkervcp/yolks:debian
 
 LABEL   author="Torsten Widmann" maintainer="info@goover.de"
 
@@ -17,5 +17,5 @@ USER    container
 ENV     USER=container HOME=/home/container
 WORKDIR /home/container
 
-COPY    ./entrypoint.sh /entrypoint.sh
+COPY    ./../entrypoint.sh /entrypoint.sh
 CMD     ["/bin/bash", "/entrypoint.sh"]
