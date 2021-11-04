@@ -22,6 +22,9 @@
 # SOFTWARE.
 #
 
+# Wait for the container to fully initialize
+sleep 1
+
 # Default the TZ environment variable to UTC.
 TZ=${TZ:-UTC}
 export TZ
