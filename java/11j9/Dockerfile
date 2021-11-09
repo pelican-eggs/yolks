@@ -1,4 +1,4 @@
-FROM        --platform=$BUILDPLATFORM adoptopenjdk/openjdk11-openj9:debianslim
+FROM        --platform=$TARGETOS/$TARGETARCH adoptopenjdk/openjdk11-openj9:debianslim
 
 LABEL       author="Michael Parker" maintainer="parker@pterodactyl.io"
 

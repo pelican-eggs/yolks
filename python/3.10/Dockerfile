@@ -1,10 +1,9 @@
-FROM        --platform=$TARGETOS/$TARGETARCH node:12-buster-slim
+FROM        --platform=$TARGETOS/$TARGETARCH python:3.10-slim
 
 LABEL       author="Michael Parker" maintainer="parker@pterodactyl.io"
 
 RUN         apt update \
-            && apt -y install ffmpeg iproute2 git sqlite3 libsqlite3-dev python3 python3-dev ca-certificates dnsutils tzdata zip tar curl build-essential \
-            && npm -g install npm@latest \
+            && apt -y install git gcc g++ ca-certificates dnsutils curl iproute2 ffmpeg procps \
             && useradd -m -d /home/container container
 
 USER        container

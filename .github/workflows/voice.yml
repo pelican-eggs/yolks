@@ -1,4 +1,4 @@
-name: build nodejs
+name: build voice
 on:
   workflow_dispatch:
   schedule:
@@ -7,24 +7,18 @@ on:
     branches:
       - master
     paths:
-      - nodejs/**
+      - voice/**
 jobs:
   push:
-    name: "yolks:nodejs_${{ matrix.tag }}"
+    name: "yolks:voice_${{ matrix.tag }}"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         tag:
-          - 12
-          - 14
-          - 15
-          - 16
-          - 17
+          - teaspeak
     steps:
       - uses: actions/checkout@v2
-      # Setup QEMU for ARM64 Build
-      - uses: docker/setup-qemu-action@v1
       - uses: docker/setup-buildx-action@v1
         with:
           version: "v0.5.1"
@@ -36,9 +30,9 @@ jobs:
           password: ${{ secrets.REGISTRY_TOKEN }}
       - uses: docker/build-push-action@v2
         with:
-          context: ./nodejs
-          file: ./nodejs/${{ matrix.tag }}/Dockerfile
-          platforms: linux/amd64,linux/arm64
+          context: ./voice/${{ matrix.tag }}
+          file: ./voice/${{ matrix.tag }}/Dockerfile
+          platforms: linux/amd64
           push: true
           tags: |
-            ghcr.io/parkervcp/yolks:nodejs_${{ matrix.tag }}
+             ghcr.io/parkervcp/yolks:voice_${{ matrix.tag }}

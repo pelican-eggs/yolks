@@ -1,4 +1,4 @@
-FROM        --platform=$BUILDPLATFORM openjdk:16-slim
+FROM        --platform=$TARGETOS/$TARGETARCH openjdk:16-slim
 
 LABEL       author="Michael Parker" maintainer="parker@pterodactyl.io"
 
@@ -6,7 +6,7 @@ LABEL       org.opencontainers.image.source="https://github.com/pterodactyl/yolk
 LABEL       org.opencontainers.image.licenses=MIT
 
 RUN 		apt-get update -y \
- 			&& apt-get install -y curl ca-certificates openssl git tar sqlite fontconfig tzdata iproute2 \
+ 			&& apt-get install -y curl ca-certificates openssl git tar sqlite3 fontconfig tzdata iproute2 \
  			&& useradd -d /home/container -m container
 
 USER        container

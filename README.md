@@ -31,7 +31,16 @@ is tagged correctly.
 * [debian](/oses/debian)
   * `ghcr.io/parkervcp/yolks:debian`
 * [ubuntu](/oses/ubuntu)
-  * `ghcr.io/parkervcp/yolks:ubuntu`  
+  * `ghcr.io/parkervcp/yolks:ubuntu`
+### [Bot](/bot)  
+  * [`bastion`](/bot/bastion)
+    * `ghcr.io/parkervcp/yolks:bot_bastion`
+  * [`parkertron`](/bot/parkertron)
+    * `ghcr.io/parkervcp/yolks:bot_parkertron`
+  * [`redbot`](/bot/red)
+    * `ghcr.io/parkervcp/yolks:bot_red`
+  * [`sinusbot`](/bot/sinusbot)
+    * `ghcr.io/parkervcp/yolks:bot_sinusbot`
 ### [Cassandra](/cassandra)
   * [`cassandra_java8_python27`](/cassandra/cassandra_java8_python2)
     * `ghcr.io/parkervcp/yolks:cassandra_java11_python2`
@@ -43,7 +52,7 @@ is tagged correctly.
   * [`dotnet3.1`](/dotnet/3.1)
     * `ghcr.io/parkervcp/yolks:dotnet_3.1`
   * [`dotnet5.0`](/dotnet/5.0)
-    * `ghcr.io/parkervcp/yolks:dotnet_5.0`        
+    * `ghcr.io/parkervcp/yolks:dotnet_5`        
 ### [Erlang](/erlang)
   * [`erlang22`](/erlang/22)
     * `ghcr.io/parkervcp/yolks:erlang_22`
@@ -78,6 +87,8 @@ is tagged correctly.
     * `ghcr.io/parkervcp/yolks:java_14`
   * [`java16`](/java/16)
     * `ghcr.io/parkervcp/yolks:java_16`
+  * [`java17`](/java/17)
+    * `ghcr.io/parkervcp/yolks:java_17`    
 ### [Nodejs](/nodejs)
   * [`node12`](/nodejs/12)
     * `ghcr.io/parkervcp/yolks:nodejs_12`
@@ -87,6 +98,8 @@ is tagged correctly.
     * `ghcr.io/parkervcp/yolks:nodejs_15`
   * [`node16`](/nodejs/16)
     * `ghcr.io/parkervcp/yolks:nodejs_16`
+  * [`node16`](/nodejs/17)
+    * `ghcr.io/parkervcp/yolks:nodejs_17`    
 ### [Python](/python)
   * [`python3.7`](/python/3.7)
     * `ghcr.io/parkervcp/yolks:python_3.7`
@@ -94,7 +107,11 @@ is tagged correctly.
     * `ghcr.io/parkervcp/yolks:python_3.8`
   * [`python3.9`](/python/3.9)
     * `ghcr.io/parkervcp/yolks:python_3.9`
-
+  * [`python3.10`](/python/3.10)
+    * `ghcr.io/parkervcp/yolks:python_3.10`    
+### [Voice](/voice)
+  * [`TeaSpeak`](/teaspeak)
+    * `ghcr.io/parkervcp/yolks:voice_teaspeak`    
 ### [Installation Images](/installers)
 
 * [`alpine-install`](/installers/alpine)
