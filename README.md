@@ -53,7 +53,7 @@ is tagged correctly.
     * `ghcr.io/parkervcp/yolks:dotnet_3.1`
   * [`dotnet5.0`](/dotnet/5.0)
     * `ghcr.io/parkervcp/yolks:dotnet_5`
-  * [`dotnet6.0`](/dotnet/5.0)
+  * [`dotnet6.0`](/dotnet/6.0)
     * `ghcr.io/parkervcp/yolks:dotnet_6`          
 ### [Erlang](/erlang)
   * [`erlang22`](/erlang/22)
