@@ -3,7 +3,7 @@ FROM        --platform=$TARGETOS/$TARGETARCH adoptopenjdk/openjdk11-openj9:debia
 LABEL       author="Michael Parker" maintainer="parker@pterodactyl.io"
 
 RUN 		    apt update -y \
- 			      && apt install -y curl ca-certificates openssl git tar sqlite fontconfig tzdata iproute2 \
+ 			      && apt install -y curl ca-certificates openssl git tar sqlite fontconfig tzdata iproute2 libfreetype6 \
  			      && useradd -d /home/container -m container
 
 USER        container
