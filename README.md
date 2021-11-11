@@ -52,7 +52,9 @@ is tagged correctly.
   * [`dotnet3.1`](/dotnet/3.1)
     * `ghcr.io/parkervcp/yolks:dotnet_3.1`
   * [`dotnet5.0`](/dotnet/5.0)
-    * `ghcr.io/parkervcp/yolks:dotnet_5`        
+    * `ghcr.io/parkervcp/yolks:dotnet_5`
+  * [`dotnet6.0`](/dotnet/6.0)
+    * `ghcr.io/parkervcp/yolks:dotnet_6`          
 ### [Erlang](/erlang)
   * [`erlang22`](/erlang/22)
     * `ghcr.io/parkervcp/yolks:erlang_22`
