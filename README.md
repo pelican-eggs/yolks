@@ -51,9 +51,9 @@ is tagged correctly.
     * `ghcr.io/parkervcp/yolks:dotnet_2.1`
   * [`dotnet3.1`](/dotnet/3.1)
     * `ghcr.io/parkervcp/yolks:dotnet_3.1`
-  * [`dotnet5.0`](/dotnet/5.0)
+  * [`dotnet5.0`](/dotnet/5)
     * `ghcr.io/parkervcp/yolks:dotnet_5`
-  * [`dotnet6.0`](/dotnet/6.0)
+  * [`dotnet6.0`](/dotnet/6)
     * `ghcr.io/parkervcp/yolks:dotnet_6`          
 ### [Erlang](/erlang)
   * [`erlang22`](/erlang/22)
@@ -90,7 +90,10 @@ is tagged correctly.
   * [`java16`](/java/16)
     * `ghcr.io/parkervcp/yolks:java_16`
   * [`java17`](/java/17)
-    * `ghcr.io/parkervcp/yolks:java_17`    
+    * `ghcr.io/parkervcp/yolks:java_17`
+### [Mono](/mono)
+  * [`mono_latest`](/mono/latest)
+    * `ghcr.io/parkervcp/yolks:mono_latest`        
 ### [Nodejs](/nodejs)
   * [`node12`](/nodejs/12)
     * `ghcr.io/parkervcp/yolks:nodejs_12`
@@ -100,7 +103,7 @@ is tagged correctly.
     * `ghcr.io/parkervcp/yolks:nodejs_15`
   * [`node16`](/nodejs/16)
     * `ghcr.io/parkervcp/yolks:nodejs_16`
-  * [`node16`](/nodejs/17)
+  * [`node17`](/nodejs/17)
     * `ghcr.io/parkervcp/yolks:nodejs_17`    
 ### [Python](/python)
   * [`python3.7`](/python/3.7)
@@ -115,9 +118,7 @@ is tagged correctly.
   * [`TeaSpeak`](/teaspeak)
     * `ghcr.io/parkervcp/yolks:voice_teaspeak`    
 ### [Installation Images](/installers)
-
 * [`alpine-install`](/installers/alpine)
   * `ghcr.io/parkervcp/installers:alpine`
-
 * [`debian-install`](/installers/debian)
   * `ghcr.io/parkervcp/installers:debian`
