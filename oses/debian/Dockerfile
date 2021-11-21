@@ -21,7 +21,8 @@ RUN          update-locale lang=en_US.UTF-8 \
              && dpkg-reconfigure --frontend noninteractive locales
 
 USER         container
-ENV          USER=container HOME=/home/container
+ENV          USER=container 
+ENV          HOME=/home/container
 WORKDIR      /home/container
 
 COPY        ./entrypoint.sh /entrypoint.sh
