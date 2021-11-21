@@ -116,7 +116,10 @@ is tagged correctly.
     * `ghcr.io/parkervcp/yolks:python_3.10`    
 ### [Voice](/voice)
   * [`TeaSpeak`](/teaspeak)
-    * `ghcr.io/parkervcp/yolks:voice_teaspeak`    
+    * `ghcr.io/parkervcp/yolks:voice_teaspeak`
+### [Wine](/wine)
+  * [`Wine`](/wine)
+    * `ghcr.io/parkervcp/yolks:wine_latest`
 ### [Installation Images](/installers)
 * [`alpine-install`](/installers/alpine)
   * `ghcr.io/parkervcp/installers:alpine`
