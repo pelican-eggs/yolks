@@ -58,3 +58,7 @@ jobs:
           push: true
           tags: |
             ghcr.io/parkervcp/yolks:bot_${{ matrix.tag }}
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
