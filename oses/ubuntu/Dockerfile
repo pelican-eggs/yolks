@@ -1,4 +1,4 @@
-FROM  ubuntu:18.04
+FROM  --platform=$TARGETOS/$TARGETARCH ubuntu:18.04
 
 LABEL author="Michael Parker" maintainer="parker@pterodactyl.io"
 
@@ -23,4 +23,4 @@ RUN   update-locale lang=en_US.UTF-8 \
 WORKDIR /home/container
 
 COPY  ./entrypoint.sh /entrypoint.sh
-CMD   ["/bin/bash", "/entrypoint.sh"]
+CMD   [ "/bin/bash", "/entrypoint.sh" ]
