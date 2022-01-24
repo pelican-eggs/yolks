@@ -1,6 +1,5 @@
 # ----------------------------------
-# Environment: ubuntu
-# Minimum Panel Version: 0.7.X
+# Environment: MongoDB
 # ----------------------------------
 FROM        mongo:5-focal
 

@@ -1,6 +1,5 @@
 # ----------------------------------
 # Environment: Postgres DB
-# Minimum Panel Version: 0.7.0
 # ----------------------------------
 FROM postgres:9-alpine
 
