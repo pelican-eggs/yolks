@@ -1,6 +1,5 @@
 # ----------------------------------
 # Environment: redis
-# Minimum Panel Version: 0.7.X
 # ----------------------------------
 FROM    redis:5-bullseye
 
