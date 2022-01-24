@@ -144,6 +144,12 @@ is tagged correctly.
 * [`python3.10`](/python/3.10)
   * `ghcr.io/parkervcp/yolks:python_3.10`
 
+### [Redis](/redis)
+  * [`Redis 5`](/redis/5)
+    * `ghcr.io/parkervcp/yolks:redis_5`
+  * [`Redis 6`](/redis/6)
+    * `ghcr.io/parkervcp/yolks:redis_6`
+
 ### [Voice](/voice)
 
 * [`TeaSpeak`](/teaspeak)
