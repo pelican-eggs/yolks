@@ -1,7 +1,7 @@
 # -----------------------------------------------------
 # MariaDB Image for Pterodactyl
 # -----------------------------------------------------
-FROM        mariadb:10.3
+FROM        --platform=$TARGETOS/$TARGETARCH mariadb:10.3
 
 LABEL       author="Michael Parker" maintainer="parker@pterodactyl.io"
 

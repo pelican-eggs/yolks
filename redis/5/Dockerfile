@@ -1,7 +1,7 @@
 # ----------------------------------
 # Environment: redis
 # ----------------------------------
-FROM    redis:5-bullseye
+FROM    --platform=$TARGETOS/$TARGETARCH redis:5-bullseye
 
 LABEL   author="Michael Parker" maintainer="parker@pterodactyl.io"
 
