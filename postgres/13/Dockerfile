@@ -1,7 +1,7 @@
 # ----------------------------------
 # Environment: Postgres DB
 # ----------------------------------
-FROM postgres:13-alpine
+FROM --platform=$TARGETOS/$TARGETARCH postgres:13-alpine
 
 LABEL author="Parker" maintainer="parker@pterodactyl.io"
 

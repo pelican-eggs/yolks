@@ -1,7 +1,7 @@
 # ----------------------------------
 # Environment: MongoDB
 # ----------------------------------
-FROM        mongo:4-focal
+FROM        --platform=$TARGETOS/$TARGETARCH mongo:4-focal
 
 LABEL       author="Michael Parker" maintainer="parker@pterodactyl.io"
 
