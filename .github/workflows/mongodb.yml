@@ -19,7 +19,6 @@ jobs:
         tag:
           - 4
           - 5
-          
     steps:
       - uses: actions/checkout@v2
       - uses: docker/setup-qemu-action@v1
