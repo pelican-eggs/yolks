@@ -75,6 +75,8 @@ is tagged correctly.
 
 ### [Games](/games)
 
+* [`altv`](/games/altv)
+  * `ghcr.io/parkervcp/games:altv`
 * [`arma3`](/games/arma3)
   * `ghcr.io/parkervcp/games:arma3`
 * [`source`](/games/source)
