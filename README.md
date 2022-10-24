@@ -117,16 +117,10 @@ is tagged correctly.
 
 ### [Java](/java)
 
-* [`java7`](/java/7)
-  * `ghcr.io/parkervcp/yolks:java_7`
 * [`java8`](/java/8)
   * `ghcr.io/parkervcp/yolks:java_8`
-* [`java9`](/java/9)
-  * `ghcr.io/parkervcp/yolks:java_9`
 * [`java11`](/java/11)
-  * `ghcr.io/parkervcp/yolks:java_11`
-* [`java14`](/java/14)
-  * `ghcr.io/parkervcp/yolks:java_14`
+  * `ghcr.io/parkervcp/yolks:java_11``
 * [`java16`](/java/16)
   * `ghcr.io/parkervcp/yolks:java_16`
 * [`java17`](/java/17)
