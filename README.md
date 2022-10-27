@@ -193,6 +193,8 @@ is tagged correctly.
   * `ghcr.io/parkervcp/yolks:python_3.9`
 * [`python3.10`](/python/3.10)
   * `ghcr.io/parkervcp/yolks:python_3.10`
+* [`python3.11`](/python/3.11)
+  * `ghcr.io/parkervcp/yolks:python_3.11`
 
 ### [Redis](/redis)
 
