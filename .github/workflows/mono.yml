@@ -19,6 +19,7 @@ jobs:
           - latest
     steps:
       - uses: actions/checkout@v3
+      - uses: docker/setup-qemu-action@v1
       - uses: docker/setup-buildx-action@v2
         with:
           version: "v0.8.2"
@@ -32,7 +33,7 @@ jobs:
         with:
           context: ./mono
           file: ./mono/${{ matrix.tag }}/Dockerfile
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: |
             ghcr.io/parkervcp/yolks:mono_${{ matrix.tag }}
