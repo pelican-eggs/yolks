@@ -29,6 +29,11 @@ NC='\033[0m' # No Color
 #
 # Runs SteamCMD with specified variables and performs error handling.
 function RunSteamCMD { #[Input: int server=0 mod=1 optional_mod=2; int id]
+	### HOTFIX UNTIL STEAMCMD BUG IS FIXED! ###
+	echo -e "\n${YELLOW}[UPDATE]: UPDATING FUNCTIONALITY TEMPORARILY DISABLED UNTIL STEAMCMD BUG IS FIXED. Skipping...${NC}\n"
+	return
+	###########################################
+	
     # Clear previous SteamCMD log
     if [[ -f "${STEAMCMD_LOG}" ]]; then
         rm -f "${STEAMCMD_LOG:?}"
