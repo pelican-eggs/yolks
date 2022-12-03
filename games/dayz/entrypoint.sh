@@ -145,7 +145,7 @@ function ModsLowercase {
 # Removes duplicate items from a semicolon delimited string
 function RemoveDuplicates { #[Input: str - Output: printf of new str]
     if [[ -n $1 ]]; then # If nothing to compare, skip to prevent extra semicolon being returned
-        echo $1 | sed -e 's/;/\n/g' | sort -u | xargs printf '%s;'
+        echo $1 | sed -e 's/;/\n/g' | xargs printf '%s;'
     fi
 }
 
