@@ -16,4 +16,4 @@ mongod --fork --dbpath /home/container/mongodb/ --port 27017 --logpath /home/con
 eval ${MODIFIED_STARTUP}
 
 # stop mongo
-mongo --eval \"db.getSiblingDB('admin').shutdownServer()\
+mongo --eval \"db.getSiblingDB('admin').shutdownServer()\"
