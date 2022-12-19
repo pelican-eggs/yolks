@@ -17,6 +17,7 @@ RUN         dpkg --add-architecture i386 \
                 iproute2 \
                 gettext-base \
                 ca-certificates \
+                numactl \
                 libssl-dev \
                 lib32gcc-s1 \
                 libsdl2-2.0-0 \

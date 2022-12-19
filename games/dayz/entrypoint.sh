@@ -3,7 +3,7 @@
 ## File: Pterodactyl DayZ SA Image - entrypoint.sh
 ## Author: David Wolfe (Red-Thirten)
 ## Contributors: Aussie Server Hosts (https://aussieserverhosts.com/)
-## Date: 2022/05/22
+## Date: 2022/11/27
 ## License: MIT License
 
 ## === CONSTANTS ===
@@ -45,14 +45,14 @@ function RunSteamCMD { #[Input: int server=0 mod=1; int id]
         
         # Check if updating server or mod
         if [[ $1 == 0 ]]; then # Server
-            ${STEAMCMD_DIR}/steamcmd.sh +force_install_dir /home/container "+login \"${STEAM_USER}\" \"${STEAM_PASS}\"" +app_update $2 $extraFlags $validateServer +quit | tee -a "${STEAMCMD_LOG}"
+            numactl --physcpubind=+0 ${STEAMCMD_DIR}/steamcmd.sh +force_install_dir /home/container "+login \"${STEAM_USER}\" \"${STEAM_PASS}\"" +app_update $2 $extraFlags $validateServer +quit | tee -a "${STEAMCMD_LOG}"
         else # Mod
-            ${STEAMCMD_DIR}/steamcmd.sh "+login \"${STEAM_USER}\" \"${STEAM_PASS}\"" +workshop_download_item $GAME_ID $2 +quit | tee -a "${STEAMCMD_LOG}"
+            numactl --physcpubind=+0 ${STEAMCMD_DIR}/steamcmd.sh "+login \"${STEAM_USER}\" \"${STEAM_PASS}\"" +workshop_download_item $GAME_ID $2 +quit | tee -a "${STEAMCMD_LOG}"
         fi
         
         # Error checking for SteamCMD
         steamcmdExitCode=${PIPESTATUS[0]}
-        if [[ -n $(grep -i "error\|failed" "${STEAMCMD_LOG}" | grep -iv "setlocal\|SDL") ]]; then # Catch errors (ignore setlocale and SDL warnings)
+        if [[ -n $(grep -i "error\|failed" "${STEAMCMD_LOG}" | grep -iv "setlocal\|SDL\|thread") ]]; then # Catch errors (ignore setlocale, SDL, and thread priority warnings)
             # Soft errors
             if [[ -n $(grep -i "Timeout downloading item" "${STEAMCMD_LOG}") ]]; then # Mod download timeout
                 echo -e "\n${YELLOW}[UPDATE]: ${NC}Timeout downloading Steam Workshop mod: \"${CYAN}${modName}${NC}\" (${CYAN}${2}${NC})"
@@ -95,6 +95,7 @@ function RunSteamCMD { #[Input: int server=0 mod=1; int id]
         elif [[ $steamcmdExitCode != 0 ]]; then # Unknown fatal error
             echo -e "\n${RED}[UPDATE]: SteamCMD has crashed for an unknown reason!${NC} (Exit code: ${CYAN}${steamcmdExitCode}${NC})"
             echo -e "\t${YELLOW}(Please contact your administrator/host for support)${NC}\n"
+            cp -r /tmp/dumps /home/container/dumps
             exit $steamcmdExitCode
         else # Success!
             if [[ $1 == 0 ]]; then # Server
@@ -191,7 +192,7 @@ allMods=$(echo $allMods | sed -e 's/;/ /g') # Convert from string to array
 # Update everything (server and mods), if specified
 if [[ ${UPDATE_SERVER} == 1 ]]; then
     echo -e "\n${GREEN}[STARTUP]: ${CYAN}Starting checks for all updates...${NC}"
-    echo -e "(It is okay to ignore any \"SDL\" errors during this process)\n"
+    echo -e "(It is okay to ignore any \"SDL\" and \"thread priority\" errors during this process)\n"
     
     ## Update game server
     echo -e "${GREEN}[UPDATE]:${NC} Checking for game server updates with App ID: ${CYAN}${STEAMCMD_APPID}${NC}..."
