@@ -1,4 +1,4 @@
-FROM        --platform=$TARGETOS/$TARGETARCH adoptopenjdk/openjdk11-openj9:debianslim
+FROM        --platform=$TARGETOS/$TARGETARCH eclipse-temurin:16-jdk-focal
 
 LABEL       author="Michael Parker" maintainer="parker@pterodactyl.io"
 

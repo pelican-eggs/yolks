@@ -1,4 +1,4 @@
-FROM        --platform=$TARGETOS/$TARGETARCH openjdk:8-slim-buster
+FROM        --platform=$TARGETOS/$TARGETARCH eclipse-temurin:8u312-b07-jdk-focal
 
 LABEL       author="Michael Parker" maintainer="parker@pterodactyl.io"
 

@@ -1,4 +1,4 @@
-FROM        --platform=$TARGETOS/$TARGETARCH adoptopenjdk/openjdk16-openj9:debianslim
+FROM        --platform=$TARGETOS/$TARGETARCH eclipse-temurin:17-jdk-jammy
 
 LABEL       author="Michael Parker" maintainer="parker@pterodactyl.io"
 
