@@ -17,6 +17,7 @@ jobs:
       matrix:
         tag:
           - 2.17
+          - 2.18
     steps:
       - uses: actions/checkout@v3
       # Setup QEMU for ARM64 Build
