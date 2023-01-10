@@ -62,6 +62,7 @@ is tagged correctly.
 
 * [`dart2.17`](/dart/2.17)
   * `ghcr.io/parkervcp/yolks:dart_2.17`
+  * `ghcr.io/parkervcp/yolks:dart_2.18`
 
 ### [dotNet](/dotnet)
 
