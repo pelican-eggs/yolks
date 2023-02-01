@@ -1,4 +1,4 @@
-FROM        --platform=$TARGETOS/$TARGETARCH eclipse-temurin:17-jdk-jammy
+FROM        --platform=$TARGETOS/$TARGETARCH eclipse-temurin:17-jdk-focal
 
 LABEL       author="Michael Parker" maintainer="parker@pterodactyl.io"
 
