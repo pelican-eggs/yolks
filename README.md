@@ -218,6 +218,14 @@ is tagged correctly.
 * ['rust latest'](/rust/latest)
   * `ghcr.io/parkervcp/yolks:rust_latest`
 
+### [SteamCMD](/steamcmd)
+* [`SteamCMD Debian lastest`](/steamcmd/debian)
+  * `ghcr.io/parkervcp/steamcmd:debian`
+* [`SteamCMD Debian Dotnet`](/steamcmd/dotnet)
+  * `ghcr.io/parkervcp/steamcmd:dotnet`
+* [`SteamCMD Ubuntu latest LTS`](/steamcmd/ubuntu)
+  * `ghcr.io/parkervcp/steamcmd:ubuntu`
+
 ### [Voice](/voice)
 * [`Mumble`](/voice/mumble)
   * `ghcr.io/parkervcp/yolks:voice_mumble`

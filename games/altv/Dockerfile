@@ -18,7 +18,7 @@ RUN     apt update -y \
 RUN     wget https://packages.microsoft.com/config/debian/11/packages-microsoft-prod.deb -O packages-microsoft-prod.deb \
         && dpkg -i packages-microsoft-prod.deb \
         && apt update -y \
-        && apt install -y dotnet-sdk-5.0 dotnet-sdk-6.0 libgdiplus
+        && apt install -y dotnet-sdk-5.0 dotnet-sdk-6.0 dotnet-sdk-7.0 libgdiplus
 
 RUN     update-locale lang=en_US.UTF-8 \
         && dpkg-reconfigure --frontend noninteractive locales

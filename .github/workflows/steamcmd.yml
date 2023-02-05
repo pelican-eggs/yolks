@@ -1,4 +1,4 @@
-name: build cassandra
+name: build steamcmd
 on:
   workflow_dispatch:
   schedule:
@@ -7,17 +7,19 @@ on:
     branches:
       - master
     paths:
-      - cassandra/**
+      - steamcmd/**
 jobs:
   push:
-    name: "yolks:cassandra_${{ matrix.tag }}"
+    name: "steamcmd:${{ matrix.distro }}"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        tag:
-          - java8_python2
-          - java11_python3
+        distro:
+          - debian
+          - ubuntu
+          - dotnet
+      
     steps:
       - uses: actions/checkout@v3
       - uses: docker/setup-buildx-action@v2
@@ -30,9 +32,9 @@ jobs:
           password: ${{ secrets.REGISTRY_TOKEN }}
       - uses: docker/build-push-action@v3
         with:
-          context: ./cassandra
-          file: ./cassandra/${{ matrix.tag }}/Dockerfile
+          context: ./steamcmd
+          file: ./steamcmd/${{ matrix.distro }}/Dockerfile
           platforms: linux/amd64
           push: true
           tags: |
-            ghcr.io/nagol12344/yolks:cassandra_${{ matrix.tag }}
+            ghcr.io/parkervcp/steamcmd:${{ matrix.distro }}
