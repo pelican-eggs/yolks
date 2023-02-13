@@ -272,12 +272,12 @@ envsubst < /passwd.template > ${NSS_WRAPPER_PASSWD}
 export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libnss_wrapper.so
 
 # Replace Startup Variables
-modifiedStartup=`eval echo $(echo ${STARTUP} | sed -e 's/{{/${/g' -e 's/}}/}/g')`
+modifiedStartup=`exec env echo $(echo ${STARTUP} | sed -e 's/{{/${/g' -e 's/}}/}/g')`
 
 # Start the Server
 echo -e "\n${GREEN}[STARTUP]:${NC} Starting server with the following startup command:"
 echo -e "${CYAN}${modifiedStartup}${NC}\n"
-exec env ${modifiedStartup}
+${modifiedStartup}
 
 if [ $? -ne 0 ]; then
     echo -e "\n${RED}PTDL_CONTAINER_ERR: There was an error while attempting to run the start command.${NC}\n"
