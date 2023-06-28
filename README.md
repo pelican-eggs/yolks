@@ -171,6 +171,8 @@ is tagged correctly.
   * `ghcr.io/parkervcp/yolks:nodejs_18`
 * [`node19`](/nodejs/19)
   * `ghcr.io/parkervcp/yolks:nodejs_19`
+* [`node20`](/nodejs/20)
+  * `ghcr.io/parkervcp/yolks:nodejs_20`
 
 ### [PostgreSQL](/postgres)
 
