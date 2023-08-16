@@ -131,6 +131,8 @@ is tagged correctly.
   * `ghcr.io/parkervcp/yolks:java_17`
 * [`java19`](/java/19)
   * `ghcr.io/parkervcp/yolks:java_19`
+* [`java20`](/java/20)
+  * `ghcr.io/parkervcp/yolks:java_20`
 
 ### [MariaDB](/mariadb)
 
