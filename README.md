@@ -51,7 +51,7 @@ is tagged correctly.
 * [`Box64`](/box64)
   * `ghcr.io/parkervcp/yolks:box64`
 
-### [Bun](/bin)
+### [Bun](/bun)
 
 * [`Bun Canary`](/bun/canary)
   * `ghcr.io/parkervcp/yolks:bun_canary`
