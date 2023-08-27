@@ -10,13 +10,14 @@ on:
       - bun/**
 jobs:
   push:
-    name: "yolks:${{ matrix.tag }}"
+    name: "yolks:bun_${{ matrix.tag }}"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         tag:
-          - bun
+          - latest
+          - canary
     steps:
       - uses: actions/checkout@v3
       - uses: docker/setup-qemu-action@v2
@@ -31,8 +32,8 @@ jobs:
       - uses: docker/build-push-action@v4
         with:
           context: ./bun
-          file: ./bun/Dockerfile
+          file: ./bun/${{ matrix.tag }}/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/parkervcp/yolks:${{ matrix.tag }}
+            ghcr.io/parkervcp/yolks:bun_${{ matrix.tag }}
