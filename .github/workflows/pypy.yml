@@ -16,7 +16,9 @@ jobs:
       fail-fast: false
       matrix:
         tag:
+          - '3.10'
           - '3.9'
+          - '2.7'
 
     steps:
       - uses: actions/checkout@v3
@@ -31,9 +33,9 @@ jobs:
           password: ${{ secrets.REGISTRY_TOKEN }}
       - uses: docker/build-push-action@v4
         with:
-          context: ./python
-          file: ./python/${{ matrix.tag }}/Dockerfile
+          context: ./pypy
+          file: ./pypy/${{ matrix.tag }}/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/mratox/yolks:pypy_${{ matrix.tag }}
+            ghcr.io/parkervcp/yolks:pypy_${{ matrix.tag }}
