@@ -1,0 +1,19 @@
+name: Build Bun
+on: [push]
+jobs:
+  build-bun-docker-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.REGISTRY_TOKEN }}
+      - name: Build Bun Docker image
+        run: |
+               cd ./bun
+               docker build . --tag ghcr.io/parkervcp/yolks:bun
+               docker run ghcr.io/parkervcp/yolks:bun
+               docker push ghcr.io/parkervcp/yolks:bun
