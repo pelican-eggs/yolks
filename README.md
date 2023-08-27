@@ -51,6 +51,13 @@ is tagged correctly.
 * [`Box64`](/box64)
   * `ghcr.io/parkervcp/yolks:box64`
 
+### [Bun](/bin)
+
+* [`Bun Canary`](/bun/canary)
+  * `ghcr.io/parkervcp/yolks:bun_canary`
+* [`Bun Latest`](/bun/latest)
+  * `ghcr.io/parkervcp/yolks:bun_latest`
+
 ### [Cassandra](/cassandra)
 
 * [`cassandra_java8_python27`](/cassandra/cassandra_java8_python2)
@@ -176,10 +183,6 @@ is tagged correctly.
 * [`node20`](/nodejs/20)
   * `ghcr.io/parkervcp/yolks:nodejs_20`
 
-### [Bun](/bun)
-
-* [`bun`](/bun)
-  * `ghcr.io/parkervcp/yolks:bun`
 
 ### [PostgreSQL](/postgres)
 
