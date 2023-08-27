@@ -176,6 +176,11 @@ is tagged correctly.
 * [`node20`](/nodejs/20)
   * `ghcr.io/parkervcp/yolks:nodejs_20`
 
+### [Bun](/bun)
+
+* [`bun`](/bun)
+  * `ghcr.io/parkervcp/yolks:bun`
+
 ### [PostgreSQL](/postgres)
 
   * [`Postgres 9`](/postgres/9)
