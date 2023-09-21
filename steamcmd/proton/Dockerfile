@@ -1,7 +1,7 @@
 # ---------------------------------------------
 # Steam Proton image
 # ---------------------------------------------
-FROM        debian:bullseye-slim
+FROM        debian:bookworm-slim
 
 LABEL       author="Torsten Widmann" maintainer="info@goover.de"
 
