@@ -20,7 +20,7 @@
 # SOFTWARE.
 #
 
-FROM      --platform=$TARGETOS/$TARGETARCH debian:bullseye-slim
+FROM      --platform=$TARGETOS/$TARGETARCH debian:bookworm-slim
 
 LABEL     author="Torsten Widmann" maintainer="info@goover.de"
 
