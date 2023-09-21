@@ -1,4 +1,4 @@
-FROM 		--platform=$TARGETOS/$TARGETARCH ubuntu:20.04
+FROM 		--platform=$TARGETOS/$TARGETARCH ubuntu:22.04
 ENV         DEBIAN_FRONTEND noninteractive
 
 RUN         apt update -y \
