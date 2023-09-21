@@ -20,7 +20,7 @@
 # SOFTWARE.
 #
 
-FROM        --platform=$TARGETOS/$TARGETARCH ubuntu:focal
+FROM        --platform=$TARGETOS/$TARGETARCH ubuntu:jammy
 
 LABEL       author="oliver194" maintainer="100048880+oliver194@users.noreply.github.com"
 
