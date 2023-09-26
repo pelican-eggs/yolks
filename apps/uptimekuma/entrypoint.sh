@@ -28,6 +28,7 @@ echo -e "${BLUE}-------------------------------------------------${NC}"
 echo -e "${YELLOW}Running on Alpine: ${RED} $(cat /etc/alpine-release)${NC}"
 echo -e "${YELLOW}Current timezone: ${RED} $(cat /etc/localtime)${NC}"
 echo -e "${YELLOW}NodeJS Version: ${RED} $(node -v) ${NC}"
+echo -e "${YELLOW}Cloudflared Version: ${RED} $(/usr/bin/cloudflared --version) ${NC}"
 echo -e "${BLUE}-------------------------------------------------${NC}"
 
 # Replace Startup Variables
