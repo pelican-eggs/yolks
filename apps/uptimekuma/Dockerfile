@@ -12,6 +12,7 @@ RUN         apk add --no-cache \
                 automake \
                 build-base \
                 ca-certificates\
+                chromium \
                 curl \
                 bind-tools \
 				ffmpeg \
