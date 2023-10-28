@@ -9,7 +9,7 @@ LABEL           org.opencontainers.image.licenses=MIT
 ## install required packages
 RUN             dpkg --add-architecture i386 \
                 && apt update -y \
-                && apt install -y --no-install-recommends gnupg2 numactl tzdata software-properties-common libntlm0 winbind xvfb xauth python3 libncurses5:i386 libncurses6:i386 libsdl2-2.0-0 libsdl2-2.0-0:i386 lib32gcc-s1 libgcc1
+                && apt install -y --no-install-recommends gnupg2 numactl tzdata software-properties-common libntlm0 winbind xvfb xauth python3 libncurses5:i386 libncurses6:i386 libsdl2-2.0-0 libsdl2-2.0-0:i386 lib32gcc-s1 libgcc-s1
 
 # Install wine and with recommends
 RUN             mkdir -pm755 /etc/apt/keyrings
