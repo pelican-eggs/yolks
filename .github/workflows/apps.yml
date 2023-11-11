@@ -1,0 +1,42 @@
+name: build apps
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * 1"
+  push:
+    branches:
+      - master
+    paths:
+      - apps/**
+jobs:
+  push:
+    name: "yolks:apps_${{ matrix.app }}"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app:
+          - uptimekuma
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: docker/setup-qemu-action@v3
+      
+      - uses: docker/setup-buildx-action@v3
+        with:
+          buildkitd-flags: --debug
+      
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.REGISTRY_TOKEN }}
+      
+      - uses: docker/build-push-action@v5
+        with:
+          context: ./apps/${{ matrix.app }}
+          file: ./apps/${{ matrix.app }}/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/parkervcp/apps:${{ matrix.app }}

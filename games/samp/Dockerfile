@@ -7,7 +7,7 @@ RUN         apt update \
 RUN         dpkg --add-architecture i386 \
             && apt update \
             && apt upgrade -y \
-            && apt install -y libstdc++6 lib32stdc++6 tar curl iproute2 openssl fontconfig dirmngr ca-certificates dnsutils tzdata zip  \
+            && apt install -y libstdc++6 lib32stdc++6 tar curl iproute2 openssl fontconfig dirmngr ca-certificates dnsutils tzdata zip tini  \
             && apt install -y libtbb-dev:i386 libtbb-dev:i386 libicu-dev:i386 libtbbmalloc2:i386  \
             && useradd -d /home/container -m container
 
@@ -18,5 +18,9 @@ USER        container
 ENV         USER=container HOME=/home/container
 WORKDIR     /home/container
 
-COPY        ./entrypoint.sh /entrypoint.sh
-CMD         [ "/bin/bash", "/entrypoint.sh" ]
+STOPSIGNAL SIGINT
+
+COPY        --chown=container:container ./entrypoint.sh /entrypoint.sh
+RUN         chmod +x /entrypoint.sh
+ENTRYPOINT    ["/usr/bin/tini", "-g", "--"]
+CMD         ["/entrypoint.sh"]

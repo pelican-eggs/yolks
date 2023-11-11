@@ -35,6 +35,11 @@ is tagged correctly.
 * [ubuntu](/oses/ubuntu)
   * `ghcr.io/parkervcp/yolks:ubuntu`
 
+### [Apps](/apps)
+
+* [`uptimekuma`](/apps/uptimekuma)
+  * `ghcr.io/parkervcp/yolks:apps_uptimekuma`
+
 ### [Bot](/bot)
 
 * [`bastion`](/bot/bastion)
@@ -83,6 +88,19 @@ is tagged correctly.
 * [`dotnet7.0`](/dotnet/7)
   * `ghcr.io/parkervcp/yolks:dotnet_7`
 
+### [Elixir](/elixir)
+
+* [`elixir 1.12`](/elixir/1.12)
+  * `ghcr.io/parkervcp/yolks:elixir_1.12`
+* [`elixir 1.13`](/elixir/1.13)
+  * `ghcr.io/parkervcp/yolks:elixir_1.13`
+* [`elixir 1.14`](/elixir/1.14)
+  * `ghcr.io/parkervcp/yolks:elixir_1.14`
+* [`elixir 1.15`](/elixir/1.12)
+  * `ghcr.io/parkervcp/yolks:elixir_1.15`
+* [`elixir latest`](/elixir/latest)
+  * `ghcr.io/parkervcp/yolks:elixir_latest`
+
 ### [Erlang](/erlang)
 
 * [`erlang22`](/erlang/22)
@@ -104,6 +122,8 @@ is tagged correctly.
   * `ghcr.io/parkervcp/games:minetest`  
 * [`mohaa`](games/mohaa)
   * `ghcr.io/pterodactyl/games:mohaa`  
+* [`Multi Theft Auto: San Andreas`](games/mta)
+  * `ghcr.io/pterodactyl/games:mta`    
 * [`samp`](/games/samp)
   * `ghcr.io/parkervcp/games:samp`  
 * [`source`](/games/source)
@@ -125,6 +145,10 @@ is tagged correctly.
   * `ghcr.io/parkervcp/yolks:go_1.18`
 * [`go1.19`](/go/1.19)
   * `ghcr.io/parkervcp/yolks:go_1.19`
+* [`go1.20`](/go/1.20)
+  * `ghcr.io/parkervcp/yolks:go_1.20`
+* [`go1.21`](/go/1.21)
+  * `ghcr.io/parkervcp/yolks:go_1.21`
 
 ### [Java](/java)
 
@@ -211,6 +235,8 @@ is tagged correctly.
   * `ghcr.io/parkervcp/yolks:python_3.10`
 * [`python3.11`](/python/3.11)
   * `ghcr.io/parkervcp/yolks:python_3.11`
+* [`python3.12`](/python/3.12)
+  * `ghcr.io/parkervcp/yolks:python_3.12`
 
 ### [Redis](/redis)
 
