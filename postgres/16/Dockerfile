@@ -1,7 +1,7 @@
 # ----------------------------------
 # Environment: Postgres DB
 # ----------------------------------
-FROM --platform=$TARGETOS/$TARGETARCH postgres:16.1-bookworm
+FROM --platform=$TARGETOS/$TARGETARCH postgres:16-bookworm
 
 LABEL author="Parker" maintainer="parker@pterodactyl.io"
 
