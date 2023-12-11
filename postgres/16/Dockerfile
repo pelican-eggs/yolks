@@ -1,25 +1,21 @@
 # ----------------------------------
 # Environment: Postgres DB
 # ----------------------------------
-FROM --platform=$TARGETOS/$TARGETARCH postgres:16-bookworm
+FROM --platform=$TARGETOS/$TARGETARCH postgres:16-alpine
 
 LABEL author="Parker" maintainer="parker@pterodactyl.io"
 
 # UID 999 is the default pterodactyl user
-RUN adduser -D --home /home/container container
+RUN adduser -D -h /home/container container
 
-RUN apt install tini curl iproute2 ca-certificates fontconfig git openssl sqlite tar tzdata
-
-# Remove cached packages
-RUN apt clean
-
+RUN     apk add --no-cache tini curl iproute2 ca-certificates fontconfig git openssl sqlite tar tzdata
 USER container
 ENV HOME /home/container
 WORKDIR /home/container
 
 STOPSIGNAL SIGINT
 
-COPY          --chown=container:container ../entrypoint.sh /entrypoint.sh
-RUN           chmod +x /entrypoint.sh
+COPY        --chown=container:container ../entrypoint.sh /entrypoint.sh
+RUN         chmod +x /entrypoint.sh
 ENTRYPOINT    ["/sbin/tini", "-g", "--"]
-CMD           ["/entrypoint.sh"]
+CMD         ["/entrypoint.sh"]
