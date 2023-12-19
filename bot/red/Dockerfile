@@ -34,7 +34,7 @@ RUN           apt update \
                      liblzma-dev \
                      ffmpeg \
                      imagemagick \
-			       tini
+			              tini
 
 RUN           pip install --upgrade pip
 RUN           pip install python-forecastio tweepy unidecode mcstatus bs4 sqlalchemy geocoder valve python-valve py-cpuinfo psutil
