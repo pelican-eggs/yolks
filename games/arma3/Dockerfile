@@ -28,7 +28,8 @@ RUN         dpkg --add-architecture i386 \
                 libnss-wrapper \
                 libnss-wrapper:i386 \
                 libtbb2 \
-                libtbb2:i386
+                libtbb2:i386 \
+                tini
 
 ## Configure locale
 RUN         update-locale lang=en_US.UTF-8 \
@@ -47,6 +48,11 @@ USER        container
 ENV         USER=container HOME=/home/container
 WORKDIR     /home/container
 
-## Copy over and execute entrypoint.sh
-COPY        ./entrypoint.sh /entrypoint.sh
-CMD         [ "/bin/bash", "/entrypoint.sh" ]
+## Copy over entrypoint.sh and set permissions
+COPY        --chown=container:container ./entrypoint.sh /entrypoint.sh
+RUN         chmod +x /entrypoint.sh
+
+## Start with Tini to pass future stop signals correctly
+STOPSIGNAL  SIGINT
+ENTRYPOINT  ["/usr/bin/tini", "-g", "--"]
+CMD         ["/entrypoint.sh"]
