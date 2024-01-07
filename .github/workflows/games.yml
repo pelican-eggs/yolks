@@ -31,7 +31,7 @@ jobs:
           buildkitd-flags: --debug
       - uses: docker/login-action@v3
         with:
-          registry: ghcr.io
+          registry: docker.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.REGISTRY_TOKEN }}
       - uses: docker/build-push-action@v5
@@ -41,7 +41,7 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ghcr.io/parkervcp/games:${{ matrix.game }}
+            docker.io/parkervcp/games:${{ matrix.game }}
   pushAll:
     name: "games_All:${{ matrix.game }}"
     runs-on: ubuntu-latest
