@@ -33,7 +33,7 @@ jobs:
         with:
           registry: docker.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.REGISTRY_TOKEN }}
+          password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
       - uses: docker/build-push-action@v5
         with:
           context: ./games/${{ matrix.game }}
@@ -64,7 +64,7 @@ jobs:
         with:
           registry: docker.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.REGISTRY_TOKEN }}
+          password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
       - uses: docker/build-push-action@v5
         with:
           context: ./games/${{ matrix.game }}
