@@ -48,7 +48,7 @@ WORKDIR     /home/container
 STOPSIGNAL SIGINT
 
 COPY        --chown=container:container ./entrypoint.sh /entrypoint.sh
-COPY        --chown=container:container ./supervisord.conf /etc/supervisor/conf.d/supervisord.conf  # Add supervisord configuration
+COPY        --chown=container:container ./supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 RUN         chmod +x /entrypoint.sh
 ENTRYPOINT    ["/usr/bin/tini", "-g", "--"]
 CMD         ["/entrypoint.sh"]
