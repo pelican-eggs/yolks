@@ -1,7 +1,7 @@
 # ---------------------------------------
 # Generic Wine image based on Wine staging 
 # ---------------------------------------
-FROM            ghcr.io/parkervcp/yolks:debian
+FROM            registry.cn-hangzhou.aliyuncs.com/jiongzu/yolks:debian
 
 LABEL           author="Michael Parker" maintainer="parker@pterodactyl.io"
 LABEL           org.opencontainers.image.licenses=MIT

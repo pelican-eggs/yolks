@@ -29,9 +29,14 @@ jobs:
           buildkitd-flags: --debug
       - uses: docker/login-action@v3
         with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.REGISTRY_TOKEN }}
+          registry: ccr.ccs.tencentyun.com
+          username: ${{ secrets.qcloud_owner }}
+          password: ${{ secrets.qcloud_registry_token }}
+      - uses: docker/login-action@v3
+        with:
+          registry: registry.cn-hangzhou.aliyuncs.com
+          username: ${{ secrets.aliyun_owner }}
+          password: ${{ secrets.aliyun_registry_token }}
       - uses: docker/build-push-action@v5
         with:
           context: ./mongodb
@@ -39,4 +44,5 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/parkervcp/yolks:mongodb_${{ matrix.tag }}
+            registry.cn-hangzhou.aliyuncs.com/jiongzu/yolks:mongodb_${{ matrix.tag }}
+            ccr.ccs.tencentyun.com/jiongzu/yolks:mongodb_${{ matrix.tag }}

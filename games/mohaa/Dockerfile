@@ -1,4 +1,4 @@
-FROM        ghcr.io/parkervcp/yolks:debian
+FROM        registry.cn-hangzhou.aliyuncs.com/jiongzu/yolks:debian
 
 LABEL       author="Manuel Dielacher" maintainer="th3dilli@gmx.at"
 

@@ -38,9 +38,14 @@ jobs:
             ${{ runner.os }}-buildx-
       - uses: docker/login-action@v3
         with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.REGISTRY_TOKEN }}
+          registry: ccr.ccs.tencentyun.com
+          username: ${{ secrets.qcloud_owner }}
+          password: ${{ secrets.qcloud_registry_token }}
+      - uses: docker/login-action@v3
+        with:
+          registry: registry.cn-hangzhou.aliyuncs.com
+          username: ${{ secrets.aliyun_owner }}
+          password: ${{ secrets.aliyun_registry_token }}
       - uses: docker/build-push-action@v5
         with:
           context: ./bot/${{ matrix.tag }}
@@ -50,7 +55,8 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache-new
           push: true
           tags: |
-            ghcr.io/parkervcp/yolks:bot_${{ matrix.tag }}
+            registry.cn-hangzhou.aliyuncs.com/jiongzu/yolks:bot_${{ matrix.tag }}
+            ccr.ccs.tencentyun.com/jiongzu/yolks:bot_${{ matrix.tag }}
       - name: Move cache
         run: |
           rm -rf /tmp/.buildx-cache
@@ -82,4 +88,4 @@ jobs:
   #         platforms: linux/amd64
   #         push: true
   #         tags: |
-  #           ghcr.io/parkervcp/yolks:bot_${{ matrix.tag }}
+  #           registry.cn-hangzhou.aliyuncs.com/jiongzu/yolks:bot_${{ matrix.tag }}
