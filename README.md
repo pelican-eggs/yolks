@@ -288,6 +288,7 @@ is tagged correctly.
 ### [Wine](/wine)
 
 * [`Wine`](/wine)
+  * `ghcr.io/parkervcp/yolks:wine_8`
   * `ghcr.io/parkervcp/yolks:wine_latest`
   * `ghcr.io/parkervcp/yolks:wine_devel`
   * `ghcr.io/parkervcp/yolks:wine_staging`
