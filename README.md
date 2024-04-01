@@ -74,6 +74,14 @@ is tagged correctly.
 
 * [`dart2.17`](/dart/2.17)
   * `ghcr.io/parkervcp/yolks:dart_2.17`
+* [`dart2.18`](/dart/2.18)
+  * `ghcr.io/parkervcp/yolks:dart_2.18`
+* [`dart2.19`](/dart/2.19)
+  * `ghcr.io/parkervcp/yolks:dart_2.19`
+* [`dart3.3`](/dart/3.3)
+  * `ghcr.io/parkervcp/yolks:dart_3.3`
+* [`dart stable`](/dart/stable)
+  * `ghcr.io/parkervcp/yolks:dart_stable`
 
 ### [dotNet](/dotnet)
 

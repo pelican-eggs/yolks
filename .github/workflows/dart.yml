@@ -16,9 +16,11 @@ jobs:
       fail-fast: false
       matrix:
         tag:
-          - 2.17
-          - 2.18
-          - 2.19
+          - '2.17'
+          - '2.18'
+          - '2.19'
+          - '3.3'
+          - 'stable'
     steps:
       - uses: actions/checkout@v4
       # Setup QEMU for ARM64 Build
