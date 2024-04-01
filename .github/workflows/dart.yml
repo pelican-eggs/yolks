@@ -40,4 +40,4 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/parkervcp/yolks:dart_${{ matrix.tag }}
+            ghcr.io/${{ github.repository_owner }}/yolks:dart_${{ matrix.tag }}
