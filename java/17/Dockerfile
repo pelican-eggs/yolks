@@ -18,7 +18,9 @@ RUN         apt update -y \
                 tzdata \
                 iproute2 \
                 libfreetype6 \
-                tini
+                tini \
+				zip \
+				unzip
 
 ## Setup user and working directory
 RUN         useradd -m -d /home/container -s /bin/bash container
