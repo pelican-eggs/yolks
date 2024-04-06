@@ -2,6 +2,8 @@ FROM  --platform=$TARGETOS/$TARGETARCH ubuntu:22.04
 
 LABEL author="Michael Parker" maintainer="parker@pterodactyl.io"
 
+ARG DEBIAN_FRONTEND noninteractive
+
 ## add container user
 RUN   useradd -m -d /home/container -s /bin/bash container
 USER        container
