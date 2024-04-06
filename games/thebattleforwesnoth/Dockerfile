@@ -1,4 +1,4 @@
-FROM  --platform=$TARGETOS/$TARGETARCH ubuntu:22.04
+FROM        --platform=$TARGETOS/$TARGETARCH debian:bookworm-slim
 
 LABEL author="Michael Parker" maintainer="parker@pterodactyl.io"
 
