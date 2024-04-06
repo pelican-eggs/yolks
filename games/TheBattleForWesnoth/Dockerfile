@@ -2,10 +2,11 @@ FROM  --platform=$TARGETOS/$TARGETARCH ubuntu:22.04
 
 LABEL author="Michael Parker" maintainer="parker@pterodactyl.io"
 
-ENV   DEBIAN_FRONTEND noninteractive
-
 ## add container user
 RUN   useradd -m -d /home/container -s /bin/bash container
+USER        container
+ENV         USER=container HOME=/home/container
+WORKDIR     /home/container
 
 ## update base packages
 RUN   apt update \
@@ -19,8 +20,6 @@ RUN   apt install -y gcc g++ libgcc1 libc++-dev gdb libc6 git tar zip unzip libs
 ## configure locale
 RUN   update-locale lang=en_US.UTF-8 \
         &&   dpkg-reconfigure --frontend noninteractive locales
-
-WORKDIR /home/container
 
 STOPSIGNAL SIGINT
 
