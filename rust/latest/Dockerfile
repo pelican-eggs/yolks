@@ -3,7 +3,7 @@ FROM        --platform=$TARGETOS/$TARGETARCH rust:slim
 LABEL       author="Ethan Coward" maintainer="ethan.coward@icloud.com"
 
 RUN         apt update \
-                && apt -y install git dnsutils curl iproute2 ffmpeg tini \
+                && apt -y install git dnsutils curl iproute2 ffmpeg tini openssl-sys \
                 && useradd -m -d /home/container container
 
 USER        container
