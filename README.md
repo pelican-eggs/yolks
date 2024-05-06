@@ -135,7 +135,9 @@ is tagged correctly.
 * [`Multi Theft Auto: San Andreas`](games/mta)
   * `ghcr.io/pterodactyl/games:mta`    
 * [`samp`](/games/samp)
-  * `ghcr.io/parkervcp/games:samp`  
+  * `ghcr.io/parkervcp/games:samp` 
+* [`screeps`](/games/screeps)
+  * `ghcr.io/parkercvp/games:screeps`  
 * [`source`](/games/source)
   * `ghcr.io/parkervcp/games:source`
 * [`thebattleforwesnoth`](/games/thebattleforwesnoth)
