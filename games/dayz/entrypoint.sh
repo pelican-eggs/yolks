@@ -8,6 +8,7 @@
 
 ## === CONSTANTS ===
 STEAMCMD_DIR="./steamcmd"                       # SteamCMD's directory containing steamcmd.sh
+WORKSHOP_DIR="./Steam/steamapps/workshop"       # SteamCMD's directory containing workshop downloads
 STEAMCMD_LOG="${STEAMCMD_DIR}/steamcmd.log"     # Log file for SteamCMD
 GAME_ID=221100                                  # SteamCMD ID for the DayZ GAME (not server). Only used for Workshop mod downloads.
 
@@ -104,8 +105,8 @@ function RunSteamCMD { #[Input: int server=0 mod=1; int id]
                 # Move the downloaded mod to the root directory, and replace existing mod if needed
                 mkdir -p ./@$2
                 rm -rf ./@$2/*
-                mv -f ./Steam/steamapps/workshop/content/$GAME_ID/$2/* ./@$2
-                rm -d ./Steam/steamapps/workshop/content/$GAME_ID/$2
+                mv -f ${WORKSHOP_DIR}/content/$GAME_ID/$2/* ./@$2
+                rm -d ${WORKSHOP_DIR}/content/$GAME_ID/$2
                 # Make the mods contents all lowercase
                 ModsLowercase @$2
                 # Move any .bikey's to the keys directory
