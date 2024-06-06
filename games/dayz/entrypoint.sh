@@ -1,15 +1,15 @@
 #!/bin/bash
 
-## File: Pterodactyl DayZ SA Image - entrypoint.sh
+## File: DayZ Image - entrypoint.sh
 ## Author: David Wolfe (Red-Thirten)
 ## Contributors: Aussie Server Hosts (https://aussieserverhosts.com/)
-## Date: 2022/11/27
+## Date: 2024/06/05
 ## License: MIT License
 
 ## === CONSTANTS ===
 STEAMCMD_DIR="./steamcmd"                       # SteamCMD's directory containing steamcmd.sh
 STEAMCMD_LOG="${STEAMCMD_DIR}/steamcmd.log"     # Log file for SteamCMD
-GAME_ID=221100                                  # SteamCMD ID for the DayZ SA GAME (not server). Only used for Workshop mod downloads.
+GAME_ID=221100                                  # SteamCMD ID for the DayZ GAME (not server). Only used for Workshop mod downloads.
 
 # Color Codes
 CYAN='\033[0;36m'
@@ -45,9 +45,9 @@ function RunSteamCMD { #[Input: int server=0 mod=1; int id]
         
         # Check if updating server or mod
         if [[ $1 == 0 ]]; then # Server
-            numactl --physcpubind=+0 ${STEAMCMD_DIR}/steamcmd.sh +force_install_dir /home/container "+login \"${STEAM_USER}\" \"${STEAM_PASS}\"" +app_update $2 $extraFlags $validateServer +quit | tee -a "${STEAMCMD_LOG}"
+            ${STEAMCMD_DIR}/steamcmd.sh +force_install_dir /home/container "+login \"${STEAM_USER}\" \"${STEAM_PASS}\"" +app_update $2 $extraFlags $validateServer +quit | tee -a "${STEAMCMD_LOG}"
         else # Mod
-            numactl --physcpubind=+0 ${STEAMCMD_DIR}/steamcmd.sh "+login \"${STEAM_USER}\" \"${STEAM_PASS}\"" +workshop_download_item $GAME_ID $2 +quit | tee -a "${STEAMCMD_LOG}"
+            ${STEAMCMD_DIR}/steamcmd.sh "+login \"${STEAM_USER}\" \"${STEAM_PASS}\"" +workshop_download_item $GAME_ID $2 +quit | tee -a "${STEAMCMD_LOG}"
         fi
         
         # Error checking for SteamCMD
@@ -238,6 +238,11 @@ if [[ ${UPDATE_SERVER} == 1 ]]; then
                     if [[ -n $latestUpdate ]] && [[ $latestUpdate =~ ^[0-9]+$ ]]; then # Notify last update date, if valid
                         echo -e "\tMod was last updated: ${CYAN}$(date -d @${latestUpdate})${NC}"
                     fi
+                    
+                    # Delete SteamCMD appworkshop cache before running to avoid mod download failures
+                    echo -e "\tClearing SteamCMD appworkshop cache..."
+                    rm -f ${WORKSHOP_DIR}/appworkshop_$GAME_ID.acf
+
                     echo -e "\tAttempting mod update/download via SteamCMD...\n"
                     RunSteamCMD 1 $modID
                 fi
@@ -280,6 +285,6 @@ echo -e "${CYAN}${modifiedStartup}${NC}\n"
 ${modifiedStartup}
 
 if [ $? -ne 0 ]; then
-    echo -e "\n${RED}PTDL_CONTAINER_ERR: There was an error while attempting to run the start command.${NC}\n"
+    echo -e "\n${RED}[STARTUP_ERR]: There was an error while attempting to run the start command.${NC}\n"
     exit 1
 fi

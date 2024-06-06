@@ -1,8 +1,8 @@
-FROM        --platform=$BUILDPLATFORM debian:bullseye-slim
+FROM        --platform=$TARGETOS/$TARGETARCH debian:bookworm-slim
 
-LABEL       author="David Wolfe (Red-Thirten)" maintainer="rehlmgaming@gmail.com"
+LABEL       author="David Wolfe (Red-Thirten)" maintainer="red_thirten@yahoo.com"
 
-LABEL       org.opencontainers.image.source="https://github.com/parkervcp/yolks"
+LABEL       org.opencontainers.image.source="https://github.com/pelican-eggs/yolks"
 LABEL       org.opencontainers.image.licenses=MIT
 
 ## Update base packages and install dependencies
@@ -17,7 +17,6 @@ RUN         dpkg --add-architecture i386 \
                 iproute2 \
                 gettext-base \
                 ca-certificates \
-                numactl \
                 libssl-dev \
                 lib32gcc-s1 \
                 libsdl2-2.0-0 \
@@ -33,7 +32,7 @@ RUN         dpkg --add-architecture i386 \
 RUN         update-locale lang=en_US.UTF-8 \
             && dpkg-reconfigure --frontend noninteractive locales
 
-## Prepare NSS Wrapper for the entrypoint as a workaround for Arma 3 requiring a valid UID
+## Prepare NSS Wrapper for the entrypoint as a workaround for DayZ requiring a valid UID
 ENV         NSS_WRAPPER_PASSWD=/tmp/passwd NSS_WRAPPER_GROUP=/tmp/group
 RUN         touch ${NSS_WRAPPER_PASSWD} ${NSS_WRAPPER_GROUP} \
             && chgrp 0 ${NSS_WRAPPER_PASSWD} ${NSS_WRAPPER_GROUP} \
@@ -46,9 +45,10 @@ USER        container
 ENV         USER=container HOME=/home/container
 WORKDIR     /home/container
 
-STOPSIGNAL SIGINT
+STOPSIGNAL  SIGINT
 
+## Copy over and execute entrypoint.sh via Tini
 COPY        --chown=container:container ./entrypoint.sh /entrypoint.sh
 RUN         chmod +x /entrypoint.sh
-ENTRYPOINT    ["/usr/bin/tini", "-g", "--"]
+ENTRYPOINT  ["/usr/bin/tini", "-g", "--"]
 CMD         ["/entrypoint.sh"]
