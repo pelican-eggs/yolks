@@ -392,10 +392,16 @@ if [[ ${HC_NUM} > 0 ]]; then
     done
 fi
 
+# Define the log file path with a timestamp
+LOG_FILE="/home/container/logs/arma3server_$(date '+%m_%d_%Y_%H%M%S').log"
+
+# Ensure the logs directory exists
+mkdir -p /home/container/logs
+
 # Start the Server
 echo -e "\n${GREEN}[STARTUP]:${NC} Starting server with the following startup command:"
 echo -e "${CYAN}${modifiedStartup}${NC}\n"
-${modifiedStartup}
+${modifiedStartup} 2>&1 | tee -a "$LOG_FILE"
 
 if [ $? -ne 0 ]; then
     echo -e "\n${RED}PTDL_CONTAINER_ERR: There was an error while attempting to run the start command.${NC}\n"
