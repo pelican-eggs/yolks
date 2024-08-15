@@ -2,7 +2,7 @@ FROM        --platform=$TARGETOS/$TARGETARCH node:20-bookworm-slim
 
 LABEL       author="Michael Parker" maintainer="parker@pterodactyl.io"
 
-# Installiere alle notwendigen Systembibliotheken einschließlich der für Puppeteer benötigten
+# Installiere die notwendigen Systembibliotheken für Puppeteer und belasse bestehende Dependencies
 RUN         apt update \
             && apt -y install \
             ffmpeg \
@@ -22,6 +22,8 @@ RUN         apt update \
             libtool \
             iputils-ping \
             libnss3 \
+            tini \
+            # Zusätzliche Bibliotheken für Puppeteer
             libatk-bridge2.0-0 \
             libatk1.0-0 \
             libcups2 \
@@ -51,7 +53,10 @@ WORKDIR     /home/container
 
 STOPSIGNAL SIGINT
 
+# Kopiere und bereite das Entry-Point-Skript vor
 COPY        --chown=container:container ./../entrypoint.sh /entrypoint.sh
 RUN         chmod +x /entrypoint.sh
+
+# Setze den Startbefehl
 ENTRYPOINT    ["/usr/bin/tini", "-g", "--"]
 CMD         ["/entrypoint.sh"]
