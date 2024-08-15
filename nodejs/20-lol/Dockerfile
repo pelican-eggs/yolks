@@ -2,7 +2,7 @@ FROM        --platform=$TARGETOS/$TARGETARCH node:20-bookworm-slim
 
 LABEL       author="Michael Parker" maintainer="parker@pterodactyl.io"
 
-# Installiere die notwendigen Systembibliotheken für Puppeteer und belasse bestehende Dependencies
+# Installiere notwendige Systembibliotheken
 RUN         apt update \
             && apt -y install \
             ffmpeg \
@@ -22,8 +22,6 @@ RUN         apt update \
             libtool \
             iputils-ping \
             libnss3 \
-            tini \
-            # Zusätzliche Bibliotheken für Puppeteer
             libatk-bridge2.0-0 \
             libatk1.0-0 \
             libcups2 \
@@ -42,6 +40,7 @@ RUN         apt update \
             libpango-1.0-0 \
             libpangoft2-1.0-0 \
             libgtk-3-0 \
+            tini \
             && useradd -m -d /home/container container
 
 # Installiere globale npm-Pakete
