@@ -25,6 +25,7 @@ jobs:
           - source
           - valheim
           - thebattleforwesnoth
+          - corekeeper
           
     steps:
       - uses: actions/checkout@v4
