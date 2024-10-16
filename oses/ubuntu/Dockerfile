@@ -2,7 +2,7 @@ FROM        --platform=$TARGETOS/$TARGETARCH ubuntu:24.04
 
 LABEL       author="Michael Parker" maintainer="parker@pterodactyl.io"
 
-LABEL       org.opencontainers.image.source="https://github.com/pterodactyl/yolks"
+LABEL       org.opencontainers.image.source="https://github.com/pelican-eggs/yolks"
 LABEL       org.opencontainers.image.licenses=MIT
 
 ENV         DEBIAN_FRONTEND=noninteractive
