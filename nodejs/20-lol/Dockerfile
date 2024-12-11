@@ -2,7 +2,7 @@ FROM        --platform=$TARGETOS/$TARGETARCH node:20-bookworm-slim
 
 LABEL       author="Michael Parker" maintainer="parker@pterodactyl.io"
 
-# Installiere die notwendigen Systembibliotheken für Puppeteer und belasse bestehende Dependencies
+# Installiere die notwendigen Systembibliotheken für Playwright und Puppeteer
 RUN         apt update \
             && apt -y install \
             ffmpeg \
@@ -23,13 +23,11 @@ RUN         apt update \
             iputils-ping \
             libnss3 \
             tini \
-            # Zusätzliche Bibliotheken für Puppeteer
             libatk-bridge2.0-0 \
             libatk1.0-0 \
             libcups2 \
             libgdk-pixbuf2.0-0 \
             libnspr4 \
-            libnss3 \
             libx11-xcb1 \
             libxcomposite1 \
             libxdamage1 \
@@ -42,10 +40,12 @@ RUN         apt update \
             libpango-1.0-0 \
             libpangoft2-1.0-0 \
             libgtk-3-0 \
+            wget \
             && useradd -m -d /home/container container
 
-# Installiere globale npm-Pakete
-RUN         npm install npm@latest typescript ts-node @types/node --location=global
+# Installiere globale npm-Pakete und Playwright-Browser
+RUN         npm install npm@latest typescript ts-node @types/node playwright --location=global \
+            && npx playwright install --with-deps
 
 USER        container
 ENV         USER=container HOME=/home/container
