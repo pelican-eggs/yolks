@@ -53,7 +53,8 @@ function RunSteamCMD { #[Input: int server=0 mod=1; int id]
         
         # Error checking for SteamCMD
         steamcmdExitCode=${PIPESTATUS[0]}
-        if [[ -n $(grep -i "error\|failed" "${STEAMCMD_LOG}" | grep -iv "setlocal\|SDL\|thread") ]]; then # Catch errors (ignore setlocale, SDL, and thread priority warnings)
+        # Catch errors (ignore setlocale, SDL, steamservice, thread priority, and libcurl warnings)
+        if [[ -n $(grep -i "error\|failed" "${STEAMCMD_LOG}" | grep -iv "setlocal\|SDL\|steamservice\|thread\|libcurl") ]]; then
             # Soft errors
             if [[ -n $(grep -i "Timeout downloading item" "${STEAMCMD_LOG}") ]]; then # Mod download timeout
                 echo -e "\n${YELLOW}[UPDATE]: ${NC}Timeout downloading Steam Workshop mod: \"${CYAN}${modName}${NC}\" (${CYAN}${2}${NC})"
