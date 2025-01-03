@@ -139,7 +139,9 @@ is tagged correctly.
 * [`Rust (dedicated server)`](games/rust)
   * `ghcr.io/parkervcp/games:rust`      
 * [`samp`](/games/samp)
-  * `ghcr.io/parkervcp/games:samp`  
+  * `ghcr.io/parkervcp/games:samp` 
+* [`screeps`](/games/screeps)
+  * `ghcr.io/parkercvp/games:screeps`  
 * [`source`](/games/source)
   * `ghcr.io/parkervcp/games:source`
 * [`thebattleforwesnoth`](/games/thebattleforwesnoth)
