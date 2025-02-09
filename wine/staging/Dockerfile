@@ -29,6 +29,7 @@ RUN	            wget -q -O /usr/sbin/winetricks https://raw.githubusercontent.co
 
 ENV             HOME=/home/container
 ENV             WINEPREFIX=/home/container/.wine
+ENV             WINEDEBUG=-all
 ENV             WINEDLLOVERRIDES="mscoree,mshtml="
 ENV             DISPLAY=:0
 ENV             DISPLAY_WIDTH=1024

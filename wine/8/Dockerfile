@@ -33,7 +33,6 @@ RUN	            wget -q -O /usr/sbin/winetricks https://raw.githubusercontent.co
 
 ENV             HOME=/home/container
 ENV             WINEPREFIX=/home/container/.wine
-ENV             WINEARCH=win64
 ENV             WINEDEBUG=-all
 ENV             WINEDLLOVERRIDES="mscoree,mshtml="
 ENV             DISPLAY=:0
