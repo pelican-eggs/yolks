@@ -16,6 +16,10 @@ jobs:
       fail-fast: false
       matrix:
         tag:
+          - "7"
+          - "8"
+          - "9"
+          - "10"
           - latest
           - devel
           - staging
