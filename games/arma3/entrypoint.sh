@@ -1,17 +1,31 @@
 #!/bin/bash
 
-## File: Pterodactyl Arma 3 Image - entrypoint.sh
-## Author: David Wolfe (Red-Thirten)
-## Contributors: Aussie Server Hosts (https://aussieserverhosts.com/), Stephen White (SilK)
-## Date: 2022/11/26
-## License: MIT License
+# Arma 3 Yolk Entrypoint - entrypoint.sh
+# Date: 2025/03/24
+# Copyright (C) 2025  David Wolfe (Red-Thirten) and contributors
+# Contributors: Aussie Server Hosts (https://aussieserverhosts.com/), Stephen White (SilK)
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+# 
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ## === CONSTANTS ===
 STEAMCMD_DIR="./steamcmd"                       # SteamCMD's directory containing steamcmd.sh
 WORKSHOP_DIR="./Steam/steamapps/workshop"       # SteamCMD's directory containing workshop downloads
 STEAMCMD_LOG="${STEAMCMD_DIR}/steamcmd.log"     # Log file for SteamCMD
 GAME_ID=107410                                  # SteamCMD ID for the Arma 3 GAME (not server). Only used for Workshop mod downloads.
-EGG_URL='https://github.com/parkervcp/eggs/tree/master/game_eggs/steamcmd_servers/arma/arma3'   # URL for Pterodactyl Egg & Info (only used as info to legacy users)
+SERVER_PARAM_FILE="startup_params_server.txt"   # File name for the auto-generated server par file to be used during startup
+HC_PARAM_FILE="startup_params_hc.txt"           # File name for the auto-generated Headless Client par file to be used during startup
+EGG_URL='https://github.com/pelican-eggs/games-steamcmd/tree/main/arma/arma3'   # URL for Egg & README (only used as info to legacy users)
 
 # Color Codes
 CYAN='\033[0;36m'
@@ -21,13 +35,15 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 ## === ENVIRONMENT VARS ===
-# STARTUP, STARTUP_PARAMS, STEAM_USER, STEAM_PASS, SERVER_BINARY, MOD_FILE, MODIFICATIONS, SERVERMODS, OPTIONALMODS, UPDATE_SERVER, CLEAR_CACHE, VALIDATE_SERVER, MODS_LOWERCASE, STEAMCMD_EXTRA_FLAGS, CDLC, STEAMCMD_APPID, HC_NUM, SERVER_PASSWORD, HC_HIDE, STEAMCMD_ATTEMPTS, BASIC_URL, DISABLE_MOD_UPDATES
+# HOME, STARTUP, STEAM_USER, STEAM_PASS, SERVER_BINARY, MOD_FILE, MODIFICATIONS, SERVERMODS, OPTIONALMODS, UPDATE_SERVER, VALIDATE_SERVER,
+# MODS_LOWERCASE, STEAMCMD_APPID, STEAMCMD_BETAID, HC_NUM, SERVER_PASSWORD, HC_HIDE, STEAMCMD_ATTEMPTS, BASIC_CFG_URL,
+# PARAM_NOLOGS, PARAM_AUTOINIT, PARAM_FILEPATCHING, PARAM_LOADMISSIONTOMEMORY, PARAM_LIMITFPS
 
 ## === GLOBAL VARS ===
-# validateServer, extraFlags, updateAttempt, modifiedStartup, allMods, CLIENT_MODS
+# updateAttempt, modifiedStartup, allMods, clientMods
 
 ## === DEFINE FUNCTIONS ===
-#
+
 # Runs SteamCMD with specified variables and performs error handling.
 function RunSteamCMD { #[Input: int server=0 mod=1 optional_mod=2; int id]
     # Clear previous SteamCMD log
@@ -36,27 +52,28 @@ function RunSteamCMD { #[Input: int server=0 mod=1 optional_mod=2; int id]
     fi
 
     updateAttempt=0
-    while (( $updateAttempt < $STEAMCMD_ATTEMPTS )); do # Loop for specified number of attempts
+    # Loop for specified number of attempts
+    while (( $updateAttempt < $STEAMCMD_ATTEMPTS )); do
         # Increment attempt counter
         updateAttempt=$((updateAttempt+1))
 
-        if (( $updateAttempt > 1 )); then # Notify if not first attempt
+        # Notify if not first attempt
+        if (( $updateAttempt > 1 )); then
             echo -e "\t${YELLOW}Re-Attempting download/update in 3 seconds...${NC} (Attempt ${CYAN}${updateAttempt}${NC} of ${CYAN}${STEAMCMD_ATTEMPTS}${NC})\n"
             sleep 3
         fi
 
         # Check if updating server or mod
         if [[ $1 == 0 ]]; then # Server
-            numactl --physcpubind=+0 ${STEAMCMD_DIR}/steamcmd.sh +force_install_dir /home/container "+login \"${STEAM_USER}\" \"${STEAM_PASS}\"" +app_update $2 $extraFlags $validateServer +quit | tee -a "${STEAMCMD_LOG}"
+            ${STEAMCMD_DIR}/steamcmd.sh +force_install_dir ${HOME} "+login \"${STEAM_USER}\" \"${STEAM_PASS}\"" +app_update $2 $( [[ -n ${STEAMCMD_BETAID} ]] && printf %s "-beta ${STEAMCMD_BETAID}" ) $( [[ ${VALIDATE_SERVER} == 1 ]] && printf %s "validate" ) +quit | tee -a "${STEAMCMD_LOG}"
         else # Mod
-            numactl --physcpubind=+0 ${STEAMCMD_DIR}/steamcmd.sh "+login \"${STEAM_USER}\" \"${STEAM_PASS}\"" +workshop_download_item $GAME_ID $2 +quit | tee -a "${STEAMCMD_LOG}"
+            ${STEAMCMD_DIR}/steamcmd.sh "+login \"${STEAM_USER}\" \"${STEAM_PASS}\"" +workshop_download_item ${GAME_ID} $2 +quit | tee -a "${STEAMCMD_LOG}"
         fi
 
         # Error checking for SteamCMD
         steamcmdExitCode=${PIPESTATUS[0]}
-        # Catch errors (ignore setlocale, SDL, steamservice, thread priority, and libcurl warnings)
         loggedErrors=$(grep -i "error\|failed" "${STEAMCMD_LOG}" | grep -iv "setlocal\|SDL\|steamservice\|thread\|libcurl")
-        if [[ -n ${loggedErrors} ]]; then
+        if [[ -n ${loggedErrors} ]]; then # Catch errors (ignore setlocale, SDL, steamservice, thread priority, and libcurl warnings)
             # Soft errors
             if [[ -n $(grep -i "Timeout downloading item" "${STEAMCMD_LOG}") ]]; then # Mod download timeout
                 echo -e "\n${YELLOW}[UPDATE]: ${NC}Timeout downloading Steam Workshop mod: \"${CYAN}${modName}${NC}\" (${CYAN}${2}${NC})"
@@ -66,16 +83,16 @@ function RunSteamCMD { #[Input: int server=0 mod=1 optional_mod=2; int id]
                 echo -e "\t(Steam servers may currently be down, or a connection cannot be made reliably)"
             # Hard errors
             elif [[ -n $(grep -i "Password check for AppId" "${STEAMCMD_LOG}") ]]; then # Incorrect beta branch password
-                echo -e "\n${RED}[UPDATE]: ${YELLOW}Incorrect password given for beta branch. ${CYAN}Skipping download...${NC}"
-                echo -e "\t(Check your \"[ADVANCED] EXTRA FLAGS FOR STEAMCMD\" startup parameter)"
+                echo -e "\n${RED}[UPDATE]: ${YELLOW}Incorrect password given for beta branch \"${STEAMCMD_BETAID}\". ${CYAN}Skipping download...${NC}"
+                echo -e "\t(Please contact the maintainer of this image; an update may be required)"
                 break
             # Fatal errors
             elif [[ -n $(grep -i "Invalid Password\|two-factor\|No subscription" "${STEAMCMD_LOG}") ]]; then # Wrong username/password, Steam Guard is turned on, or host is using anonymous account
                 echo -e "\n${RED}[UPDATE]: Cannot login to Steam - Improperly configured account and/or credentials"
                 echo -e "\t${YELLOW}Please contact your administrator/host and give them the following message:${NC}"
                 echo -e "\t${CYAN}Your Egg, or your client's server, is not configured with valid Steam credentials.${NC}"
-                echo -e "\t${CYAN}Either the username/password is wrong, or Steam Guard is not properly configured"
-                echo -e "\t${CYAN}according to this egg's documentation/README.${NC}\n"
+                echo -e "\t${CYAN}Either the username/password is wrong, or Steam Guard is not fully disabled"
+                echo -e "\t${CYAN}in accordance to this Egg's documentation/README.${NC}\n"
                 exit 1
             elif [[ -n $(grep -i "Download item" "${STEAMCMD_LOG}") ]]; then # Steam account does not own base game for mod downloads, or unknown
                 echo -e "\n${RED}[UPDATE]: Cannot download mod - Download failed"
@@ -102,37 +119,37 @@ function RunSteamCMD { #[Input: int server=0 mod=1 optional_mod=2; int id]
         elif [[ $steamcmdExitCode != 0 ]]; then # Unknown fatal error
             echo -e "\n${RED}[UPDATE]: SteamCMD has crashed for an unknown reason!${NC} (Exit code: ${CYAN}${steamcmdExitCode}${NC})"
             echo -e "\t${YELLOW}(Please contact your administrator/host for support)${NC}\n"
-            cp -r /tmp/dumps /home/container/dumps
+            cp -r /tmp/dumps ./dumps
             exit $steamcmdExitCode
         else # Success!
             if [[ $1 == 0 ]]; then # Server
                 echo -e "\n${GREEN}[UPDATE]: Game server is up to date!${NC}"
             else # Mod
-                # Move the downloaded mod to the root directory, and replace existing mod if needed
-                mkdir -p ./@$2
-                rm -rf ./@$2/*
-                mv -f ${WORKSHOP_DIR}/content/$GAME_ID/$2/* ./@$2
-                rm -d ${WORKSHOP_DIR}/content/$GAME_ID/$2
-                # Make the mods contents all lowercase
-                ModsLowercase @$2
-                # Move any .bikey's to the keys directory
-                echo -e "\tMoving any mod ${CYAN}.bikey${NC} files to the ${CYAN}~/keys/${NC} folder..."
-                if [[ $1 == 1 ]]; then
-                    find ./@$2 -name "*.bikey" -type f -exec cp {} ./keys \;
-                else
-                    # Give optional mod keys a custom name which can be checked later for deleting unconfigured mods
-                    for file in $(find ./@$2 -name "*.bikey" -type f); do
+                echo -e "\n\tMoving any mod ${CYAN}.bikey${NC} files to the ${CYAN}keys/${NC} folder..."
+                if [[ $1 == 1 ]]; then # Regular mod
+                    # Move any .bikey's to the keys directory
+                    find "${WORKSHOP_DIR}/content/${GAME_ID}/$2" -name "*.bikey" -type f -exec cp -t "keys" {} +
+                    # Make a hard link copy of the downloaded mod to the current directory if it doesn't already exist
+                    if [[ ! -d "@$2" ]]; then
+                        echo -e "\tMaking ${CYAN}hard link${NC} copy of mod to: ${CYAN}$(pwd)/@$2${NC}"
+                        mkdir @$2
+                        cp -al ${WORKSHOP_DIR}/content/${GAME_ID}/$2/* @$2/
+                    fi
+                    # Make the hard link copy's contents all lowercase
+                    # (This complies with Arma's mod-folder rules while not disturbing the mod's SteamCMD source files)
+                    ModsLowercase @$2
+                elif [[ $1 == 2 ]]; then # Optional mod
+                    # Give optional mod keys a custom name during move which can be checked later for deleting un-configured mods
+                    for file in $(find "${WORKSHOP_DIR}/content/${GAME_ID}/$2" -name "*.bikey" -type f); do
                         filename=$(basename ${file})
-
-                        cp $file ./keys/optional_$2_${filename}
-
+                        cp $file keys/optional_$2_${filename}
                     done;
-
-                    echo -e "\tMod with ID $2 is an optional mod. Deleting original mod download folder..."
-                    rm -r ./@$2
-
-                    # Recreate a directory so time-based detection of auto updates works correctly
-                    mkdir ./@$2_optional
+                    # Delete mod folder to save space
+                    echo -e "\tMod is an ${CYAN}optional mod${NC}. Deleting mod files to save space..."
+                    rm -r ${WORKSHOP_DIR}/content/${GAME_ID}/$2
+                    # Create a directory so time-based detection of auto updates works correctly
+                    mkdir @${2}_optional
+                    touch "@${2}_optional/DON'T DELETE THIS DIRECTORY - USED FOR AUTO UPDATES"
                 fi
                 echo -e "${GREEN}[UPDATE]: Mod download/update successful!${NC}"
             fi
@@ -154,9 +171,8 @@ function RunSteamCMD { #[Input: int server=0 mod=1 optional_mod=2; int id]
 
 # Takes a directory (string) as input, and recursively makes all files & folders lowercase.
 function ModsLowercase {
-    echo -e "\n\tMaking mod ${CYAN}$1${NC} files/folders lowercase..."
-    for SRC in `find ./$1 -depth`
-    do
+    echo -e "\tMaking mod ${CYAN}$1${NC} files/folders ${CYAN}lowercase${NC}..."
+    for SRC in `find ./$1 -depth`; do
         DST=`dirname "${SRC}"`/`basename "${SRC}" | tr '[A-Z]' '[a-z]'`
         if [ "${SRC}" != "${DST}" ]
         then
@@ -172,20 +188,16 @@ function RemoveDuplicates { #[Input: str - Output: printf of new str]
     fi
 }
 
-# === ENTRYPOINT START ===
+## === ENTRYPOINT START ===
 
 # Wait for the container to fully initialize
 sleep 1
 
-# Set environment variable that holds the Internal Docker IP
-INTERNAL_IP=$(ip route get 1 | awk '{print $(NF-2);exit}')
-export INTERNAL_IP
-
 # Switch to the container's working directory
-cd /home/container || exit 1
+cd ${HOME} || exit 1
 
-# Check for old eggs
-if [[ -z ${VALIDATE_SERVER} ]]; then # VALIDATE_SERVER was not in the previous version
+# Check for old Eggs
+if [[ -z ${STEAMCMD_BETAID} ]]; then # STEAMCMD_BETAID was not in the previous version
     echo -e "\n${RED}[STARTUP_ERR]: Please contact your administrator/host for support, and give them the following message:${NC}\n"
     echo -e "\t${CYAN}Your Arma 3 Egg is outdated and no longer supported.${NC}"
     echo -e "\t${CYAN}Please download the latest version at the following link, and install it in your panel:${NC}"
@@ -195,17 +207,17 @@ fi
 
 # Collect and parse all specified mods
 if [[ -n ${MODIFICATIONS} ]] && [[ ${MODIFICATIONS} != *\; ]]; then # Add manually specified mods to the client-side mods list, while checking for trailing semicolon
-    CLIENT_MODS="${MODIFICATIONS};"
+    clientMods="${MODIFICATIONS};"
 else
-    CLIENT_MODS=${MODIFICATIONS}
+    clientMods=${MODIFICATIONS}
 fi
 if [[ -f ${MOD_FILE} ]] && [[ -n "$(cat ${MOD_FILE} | grep 'Created by Arma 3 Launcher')" ]]; then # If the mod list file exists and is valid, parse and add mods to the client-side mods list
-    CLIENT_MODS+=$(cat ${MOD_FILE} | grep 'id=' | cut -d'=' -f3 | cut -d'"' -f1 | xargs printf '@%s;')
+    clientMods+=$(cat ${MOD_FILE} | grep 'id=' | cut -d'=' -f3 | cut -d'"' -f1 | xargs printf '@%s;')
 elif [[ -n "${MOD_FILE}" ]]; then # If MOD_FILE is not null, warn user file is missing or invalid
     echo -e "\n${YELLOW}[STARTUP_WARN]: Arma 3 Modlist file \"${CYAN}${MOD_FILE}${YELLOW}\" could not be found, or is invalid!${NC}"
     echo -e "\tEnsure your uploaded modlist's file name matches your Startup Parameter."
     echo -e "\tOnly files exported from an Arma 3 Launcher are permitted."
-    if [[ -n "${CLIENT_MODS}" ]]; then
+    if [[ -n "${clientMods}" ]]; then
         echo -e "\t${CYAN}Reverting to the manual mod list...${NC}"
     fi
 fi
@@ -219,8 +231,8 @@ if [[ -n ${OPTIONALMODS} ]] && [[ ${OPTIONALMODS} != *\; ]]; then # Add specifie
 else
     allMods+=${OPTIONALMODS}
 fi
-allMods+=$CLIENT_MODS # Add all client-side mods to the master mod list
-CLIENT_MODS=$(RemoveDuplicates ${CLIENT_MODS}) # Remove duplicate mods from CLIENT_MODS, if present
+allMods+=$clientMods # Add all client-side mods to the master mod list
+clientMods=$(RemoveDuplicates ${clientMods}) # Remove duplicate mods from clientMods, if present
 allMods=$(RemoveDuplicates ${allMods}) # Remove duplicate mods from allMods, if present
 allMods=$(echo $allMods | sed -e 's/;/ /g') # Convert from string to array
 
@@ -230,39 +242,26 @@ if [[ ${UPDATE_SERVER} == 1 ]]; then
     echo -e "(It is okay to ignore any \"SDL\", \"steamservice\", and \"thread priority\" errors during this process)\n"
 
     ## Update game server
-    echo -e "${GREEN}[UPDATE]:${NC} Checking for game server updates with App ID: ${CYAN}${STEAMCMD_APPID}${NC}..."
-
-    if [[ ${VALIDATE_SERVER} == 1 ]]; then # Validate will be added as a parameter if specified
+    echo -e "${GREEN}[UPDATE]:${NC} Checking for ${CYAN}game server${NC} updates with App ID: ${CYAN}${STEAMCMD_APPID}${NC}..."
+    if [[ ${VALIDATE_SERVER} == 1 ]]; then
         echo -e "\t${CYAN}File validation enabled.${NC} (This may take extra time to complete)"
-        validateServer="validate"
-    else
-        validateServer=""
     fi
-
-    # Determine what extra flags should be set
-    if [[ -n ${STEAMCMD_EXTRA_FLAGS} ]]; then
-        echo -e "\t(${YELLOW}Advanced${NC}) Extra SteamCMD flags specified: ${CYAN}${STEAMCMD_EXTRA_FLAGS}${NC}\n"
-        extraFlags=${STEAMCMD_EXTRA_FLAGS}
-    elif [[ ${CDLC} == 1 ]]; then
-        echo -e "\t${CYAN}Download/Update Creator DLC server files enabled.${NC}\n"
-        extraFlags="-beta creatordlc"
-    else
-        echo -e ""
-        extraFlags=""
+    if [[ -n ${STEAMCMD_BETAID} ]]; then
+        echo -e "\tDownload/Update of ${CYAN}\"${STEAMCMD_BETAID}\" branch enabled.${NC}"
     fi
+    echo -e ""
 
     RunSteamCMD 0 ${STEAMCMD_APPID}
 
     ## Update mods
-    if [[ -n $allMods ]] && [[ ${DISABLE_MOD_UPDATES} != 1 ]]; then
+    if [[ -n $allMods ]]; then
         echo -e "\n${GREEN}[UPDATE]:${NC} Checking all ${CYAN}Steam Workshop mods${NC} for updates..."
-        for modID in $(echo $allMods | sed -e 's/@//g')
-        do
+        for modID in $(echo $allMods | sed -e 's/@//g'); do
             if [[ $modID =~ ^[0-9]+$ ]]; then # Only check mods that are in ID-form
-                # If a mod is defined in OPTIONALMODS, and is not defined in CLIENT_MODS or SERVERMODS, then treat as an optional mod
+                # If a mod is defined in OPTIONALMODS, and is not defined in clientMods or SERVERMODS, then treat as an optional mod
                 # Optional mods are given a different directory which is checked to see if a new update is available. This is to ensure
                 # if an optional mod is switched to be a standard client-side mod, this script will redownload the mod
-                if [[ "${OPTIONALMODS}" == *"@${modID};"* ]] && [[ "${CLIENT_MODS}" != *"@${modID};"* ]] && [[ "${SERVERMODS}" != *"@${modID};"* ]]; then
+                if [[ "${OPTIONALMODS}" == *"@${modID};"* ]] && [[ "${clientMods}" != *"@${modID};"* ]] && [[ "${SERVERMODS}" != *"@${modID};"* ]]; then
                     modType=2
                     modDir=@${modID}_optional
                 else
@@ -289,18 +288,14 @@ if [[ ${UPDATE_SERVER} == 1 ]]; then
                         echo -e "\tMod was last updated: ${CYAN}$(date -d @${latestUpdate})${NC}"
                     fi
                     
-                    # Delete SteamCMD appworkshop cache before running to avoid mod download failures
-                    echo -e "\tClearing SteamCMD appworkshop cache..."
-                    rm -f ${WORKSHOP_DIR}/appworkshop_$GAME_ID.acf
-                    
                     echo -e "\tAttempting mod update/download via SteamCMD...\n"
                     RunSteamCMD $modType $modID
                 fi
             fi
         done
 
-        # Check over key files for unconfigured optional mods' .bikey files
-        for keyFile in $(find ./keys -name "*.bikey" -type f); do
+        # Check over key files for un-configured optional mods' .bikey files
+        for keyFile in $(find "keys" -name "*.bikey" -type f); do
             keyFileName=$(basename ${keyFile})
 
             # If the key file is using the optional mod file name
@@ -308,19 +303,19 @@ if [[ ${UPDATE_SERVER} == 1 ]]; then
                 modID=$(echo "${keyFileName}" | cut -d _ -f 2)
 
                 # If mod is not in optional mods, delete it
-                # If a mod is configured in CLIENT_MODS or SERVERMODS, we should still delete this file
+                # If a mod is configured in clientMods or SERVERMODS, we should still delete this file
                 # as a new file will have been copied that does not follow the naming scheme
                 if [[ "${OPTIONALMODS}" != *"@${modID};"* ]]; then
 
                     # We only need to let the user know the key file is being deleted if this mod is no longer configured at all.
-                    # If CLIENT_MODS contains the mod ID, we'd just confuse the user by telling them we are deleting the optional .bikey file
-                    if [[ "${CLIENT_MODS}" != *"@${modID};"* ]]; then
-                        echo -e "\tKey file and directory for unconfigured optional mod ${CYAN}${modID}${NC} is being deleted..."
+                    # If clientMods contains the mod ID, we'd just confuse the user by telling them we are deleting the optional .bikey file
+                    if [[ "${clientMods}" != *"@${modID};"* ]]; then
+                        echo -e "\tKey file and directory for un-configured optional mod ${CYAN}${modID}${NC} is being deleted..."
                     fi
 
                     # Delete the optional mod .bikey file and directory
                     rm ${keyFile}
-                    rmdir ./@${modID}_optional 2> /dev/null
+                    rm -r @${modID}_optional
                 fi
             fi
         done;
@@ -330,41 +325,29 @@ if [[ ${UPDATE_SERVER} == 1 ]]; then
 fi
 
 # Check if specified server binary exists.
-if [[ ! -f ./${SERVER_BINARY} ]]; then
-    echo -e "\n${RED}[STARTUP_ERR]: Specified Arma 3 server binary could not be found in the root directory!${NC}"
+if [[ ! -f ${SERVER_BINARY} ]]; then
+    echo -e "\n${RED}[STARTUP_ERR]: Specified Arma 3 server binary could not be found in `$(pwd)`!${NC}"
     echo -e "${YELLOW}Please do the following to resolve this issue:${NC}"
     echo -e "\t${CYAN}- Double check your \"Server Binary\" Startup Variable is correct.${NC}"
     echo -e "\t${CYAN}- Ensure your server has properly installed/updated without errors (reinstalling/updating again may help).${NC}"
-    echo -e "\t${CYAN}- Use the File Manager to check that your specified server binary file is not missing from the root directory.${NC}\n"
+    echo -e "\t${CYAN}- Use the File Manager to check that your specified server binary file is not missing from `$(pwd)`.${NC}\n"
     exit 1
 fi
 
 # Make mods lowercase, if specified
 if [[ ${MODS_LOWERCASE} == "1" ]]; then
-    for modDir in $allMods
-    do
+    for modDir in $allMods; do
         ModsLowercase $modDir
     done
 fi
 
 # Define the log file path with a timestamp
-LOG_FILE="/home/container/serverprofile/rpt/arma3server_$(date '+%m_%d_%Y_%H%M%S').rpt"
-
+logFile="${HOME}/.local/share/Arma 3/rpt/arma3server_$(date '+%m_%d_%Y_%H%M%S').rpt"
 # Ensure the logs directory exists
-mkdir -p /home/container/serverprofile/rpt
-
-# Clear HC cache, if specified
-if [[ ${CLEAR_CACHE} == "1" ]]; then
-    echo -e "\n${GREEN}[STARTUP]: ${CYAN}Clearing Headless Client profiles cache...${NC}"
-    for profileDir in ./serverprofile/home/*
-    do
-        [ "$profileDir" = "./serverprofile/home/Player" ] && continue
-        rm -rf $profileDir
-    done
-fi
+mkdir -p "${HOME}/.local/share/Arma 3/rpt"
 
 # Check if basic.cfg exists, and download if not (Arma really doesn't like it missing for some reason)
-if [[ ! -f ./basic.cfg ]]; then
+if [[ ! -f basic.cfg ]]; then
     echo -e "\n${YELLOW}[STARTUP_WARN]: Basic Network Configuration file \"${CYAN}basic.cfg${YELLOW}\" is missing!${NC}"
     echo -e "\t${YELLOW}Downloading default file for use instead...${NC}"
     curl -sSL ${BASIC_URL} -o ./basic.cfg
@@ -381,34 +364,78 @@ else
     export LD_PRELOAD=/usr/lib/i386-linux-gnu/libnss_wrapper.so
 fi
 
-# Replace Startup Variables
-modifiedStartup=`eval echo $(echo ${STARTUP} | sed -e 's/{{/${/g' -e 's/}}/}/g')`
+# Create server startup parameters config file
+cat > ${SERVER_PARAM_FILE} << EOF
+// ********************************************************************
+// *                                                                  *
+// *    Server Startup Parameters Config File                         *
+// *                                                                  *
+// *    This file is automatically generated by the panel.            *
+// *    Do not edit this file. Any changes made will be discarded!    *
+// *                                                                  *
+// ********************************************************************
+-name=server
+-ip=0.0.0.0
+-port=${SERVER_PORT}
+-cfg=basic.cfg
+-config=server.cfg
+-mod=${clientMods}
+-serverMod=${SERVERMODS}
+$( [[ "$PARAM_LOADMISSIONTOMEMORY" == "1" ]] && echo "-loadMissionToMemory" )
+$( [[ "$PARAM_AUTOINIT" == "1" ]] && echo "-autoInit" )
+$( [[ "$PARAM_FILEPATCHING" == "1" ]] && echo "-filePatching" )
+-limitFPS=${PARAM_LIMITFPS}
+$( [[ "$PARAM_NOLOGS" == "1" ]] && echo "-noLogs" )
+EOF
+
+# Create HC startup parameters config file
+cat > ${HC_PARAM_FILE} << EOF
+// ********************************************************************
+// *                                                                  *
+// *    Headless Client Startup Parameters Config File                *
+// *                                                                  *
+// *    This file is automatically generated by the panel.            *
+// *    Do not edit this file. Any changes made will be discarded!    *
+// *                                                                  *
+// ********************************************************************
+-client
+-ip=127.0.0.1
+-port=${SERVER_PORT}
+-password=${SERVER_PASSWORD}
+-mod=${clientMods}
+$( [[ "$PARAM_FILEPATCHING" == "1" ]] && echo "-filePatching" )
+-limitFPS=${PARAM_LIMITFPS}
+EOF
 
 # Start Headless Clients if applicable
 if [[ ${HC_NUM} > 0 ]]; then
     echo -e "\n${GREEN}[STARTUP]:${NC} Starting ${CYAN}${HC_NUM}${NC} Headless Client(s)."
-    for i in $(seq ${HC_NUM})
-    do
-        if [[ ${HC_HIDE} == "1" ]];
-        then
-            ./${SERVER_BINARY} -client -connect=127.0.0.1 -port=${SERVER_PORT} -password="${SERVER_PASSWORD}" -profiles=./serverprofile -bepath=./battleye -mod="${CLIENT_MODS}" ${STARTUP_PARAMS} > /dev/null 2>&1 &
+    for i in $(seq ${HC_NUM}); do
+        if [[ ${HC_HIDE} == "1" ]]; then
+            ./${SERVER_BINARY} -par=${HC_PARAM_FILE} > /dev/null 2>&1 &
         else
-            ./${SERVER_BINARY} -client -connect=127.0.0.1 -port=${SERVER_PORT} -password="${SERVER_PASSWORD}" -profiles=./serverprofile -bepath=./battleye -mod="${CLIENT_MODS}" ${STARTUP_PARAMS} &
+            ./${SERVER_BINARY} -par=${HC_PARAM_FILE} &
         fi
         echo -e "${GREEN}[STARTUP]:${CYAN} Headless Client $i${NC} launched."
     done
 fi
 
+# Replace Startup Command variables
+modifiedStartup=`eval echo $(echo ${STARTUP} | sed -e 's/{{/${/g' -e 's/}}/}/g')`
+
 # Start the Server
-echo -e "\n${GREEN}[STARTUP]:${NC} Starting server with the following startup command:"
-echo -e "${CYAN}${modifiedStartup}${NC}\n"
-if [[ "$STARTUP_PARAMS" == *"-noLogs"* ]]; then
-	${modifiedStartup}
+serverParams=$(sed '/^\/\//d' ${SERVER_PARAM_FILE} | tr '\n' ' ' | tr -s ' ')
+echo -e "\n${GREEN}[STARTUP]:${NC} Starting server with the following startup parameters:"
+echo -e "${CYAN}./${SERVER_BINARY} ${serverParams}${NC}\n"
+if [[ "$PARAM_NOLOGS" == "1" ]]; then
+    ${modifiedStartup}
 else
-    ${modifiedStartup} 2>&1 | tee -a "$LOG_FILE"
+    ${modifiedStartup} 2>&1 | tee -a "$logFile"
 fi
 
-if [ $? -ne 0 ]; then
-    echo -e "\n${RED}PTDL_CONTAINER_ERR: There was an error while attempting to run the start command.${NC}\n"
+# Check server exit code for errors
+exitCode=$?
+if [[ $exitCode -ne 0 && $exitCode -ne 130 ]]; then # Exit code 130 is SIGTERM
+    echo -e "\n${RED}[SERVER_ERR]: The server exited unexpectedly with code ${exitCode}!${NC}\n"
     exit 1
 fi
