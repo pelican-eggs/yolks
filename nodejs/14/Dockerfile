@@ -2,13 +2,8 @@ FROM        --platform=$TARGETOS/$TARGETARCH node:14-bullseye-slim
 
 LABEL       author="Michael Parker" maintainer="parker@pterodactyl.io"
 
-# add container user and set env
+# add container user and set stop signal
 RUN         useradd -m -d /home/container container
-
-USER        container
-ENV         USER=container HOME=/home/container
-WORKDIR     /home/container
-
 STOPSIGNAL  SIGINT
 
 RUN         apt update \
@@ -33,6 +28,10 @@ RUN         apt update \
                 tini
 
 RUN         npm install --global npm@latest typescript ts-node @types/node
+
+USER        container
+ENV         USER=container HOME=/home/container
+WORKDIR     /home/container
 
 COPY        --chown=container:container ./../entrypoint.sh /entrypoint.sh
 RUN         chmod +x /entrypoint.sh

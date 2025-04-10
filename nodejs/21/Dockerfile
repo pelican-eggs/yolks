@@ -2,13 +2,8 @@ FROM        --platform=$TARGETOS/$TARGETARCH node:21-bookworm-slim
 
 LABEL       author="Michael Parker" maintainer="parker@pterodactyl.io"
 
-# add container user and set env
+# add container user and set stop signal
 RUN         useradd -m -d /home/container container
-
-USER        container
-ENV         USER=container HOME=/home/container
-WORKDIR     /home/container
-
 STOPSIGNAL  SIGINT
 
 RUN         apt update \
@@ -38,6 +33,10 @@ RUN         npm install --global npm@10.x.x typescript ts-node @types/node
 RUN         npm install -g corepack
 RUN         corepack enable
 RUN         corepack prepare pnpm@latest --activate
+
+USER        container
+ENV         USER=container HOME=/home/container
+WORKDIR     /home/container
 
 COPY        --chown=container:container ./../entrypoint.sh /entrypoint.sh
 RUN         chmod +x /entrypoint.sh
