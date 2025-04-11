@@ -30,7 +30,7 @@ RUN         apt update \
 RUN         npm install --global npm@10.x.x typescript ts-node @types/node
 
 # install pnpm
-RUN         npm install -g corepack
+RUN         npm install -g corepack@latest
 RUN         corepack enable
 RUN         corepack prepare pnpm@latest --activate
 
