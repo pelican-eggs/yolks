@@ -37,7 +37,7 @@ cd /home/container || exit 1
 PARSED=$(echo "$STARTUP" | sed -e 's/{{/${/g' -e 's/}}/}/g')
 
 # Display the command we're running in the output, and then execute it with eval
-printf "\033[1m\033[33mcontainer@pelican~ \033[0m"
+printf "\033[1m\033[33mcontainer~ \033[0m"
 echo "$PARSED"
 # shellcheck disable=SC2086
 eval "$PARSED"
