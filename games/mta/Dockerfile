@@ -1,16 +1,14 @@
-FROM  --platform=$TARGETOS/$TARGETARCH ubuntu:24.04
-
+FROM  --platform=$TARGETOS/$TARGETARCH ubuntu:20.04
 ENV   DEBIAN_FRONTEND=noninteractive
-
-## add container user
-RUN   useradd -m -d /home/container -s /bin/bash container
 
 ## update base packages
 RUN   apt update && \
       apt upgrade -y
 
 ## install dependencies
-RUN   apt install -y iproute2 \
+RUN   apt install -y \
+        tini \
+        iproute2 \
         curl \
         git \
         zip \
@@ -19,9 +17,7 @@ RUN   apt install -y iproute2 \
         xz-utils \
         apt-transport-https \
         openssl \
-        libssl3 \
         default-libmysqlclient-dev \
-        libmysqlclient-dev \
         libreadline-dev \
         libncurses-dev \
         libtool \
@@ -36,7 +32,21 @@ RUN   apt install -y iproute2 \
 RUN   update-locale lang=en_US.UTF-8 && \
       dpkg-reconfigure --frontend noninteractive locales
 
+## add container user
+RUN   useradd -m -d /home/container -s /bin/bash container
+
+# Set up user and working directory
+USER container
+ENV USER=container HOME=/home/container
 WORKDIR /home/container
 
-COPY  ./entrypoint.sh /entrypoint.sh
-CMD   [ "/bin/bash", "/entrypoint.sh" ]
+# Set the stop signal
+STOPSIGNAL SIGINT
+
+# Copy and set up the entrypoint script
+COPY --chown=container:container ./entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Define entrypoint and command
+ENTRYPOINT ["/usr/bin/tini", "-g", "--"]
+CMD ["/entrypoint.sh"]
