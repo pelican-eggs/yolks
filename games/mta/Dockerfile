@@ -15,6 +15,7 @@ RUN   apt install -y \
         unzip \
         tar \
         xz-utils \
+        libssl1.1 \
         apt-transport-https \
         openssl \
         default-libmysqlclient-dev \
