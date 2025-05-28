@@ -39,10 +39,23 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.REGISTRY_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=python_${{ matrix.tag }}
+          labels: |
+            org.opencontainers.image.title=yolks
+            org.opencontainers.image.version=${{ matrix.tag }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
         with:
           context: ./python
           file: ./python/${{ matrix.tag }}/Dockerfile
-          platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/${{ steps.vars.outputs.owner_lc }}/yolks:python_${{ matrix.tag }}
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
