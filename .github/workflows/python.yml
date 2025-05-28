@@ -25,6 +25,9 @@ jobs:
           - '3.12'
           - '3.13'
     steps:
+      - name: Set lowercase repo owner
+        id: vars
+        run: echo "owner_lc=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_OUTPUT
       - uses: actions/checkout@v4
       # Setup QEMU for ARM64 Build
       - uses: docker/setup-qemu-action@v3          
@@ -42,6 +45,4 @@ jobs:
           file: ./python/${{ matrix.tag }}/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/yolks:python_${{ matrix.tag }}
-            ${{ github.repository_owner == 'pelican-eggs' && format('ghcr.io/parkervcp/yolks:python_{0}', matrix.tag) || '' }}
+          tags: ghcr.io/${{ steps.vars.outputs.owner_lc }}/yolks:python_${{ matrix.tag }}
