@@ -8,6 +8,9 @@ on:
       - master
     paths:
       - bot/**
+permissions:
+  packages: write
+
 jobs:
   pushArm:
     name: "yolks:bot_${{ matrix.tag }}"
@@ -40,7 +43,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.REGISTRY_TOKEN }}
+          password: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
       - uses: docker/build-push-action@v6
         with:
           context: ./bot/${{ matrix.tag }}
@@ -75,7 +78,7 @@ jobs:
   #       with:
   #         registry: ghcr.io
   #         username: ${{ github.repository_owner }}
-  #         password: ${{ secrets.REGISTRY_TOKEN }}
+  #         password: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
   #     - uses: docker/build-push-action@v6
   #       with:
   #         context: ./bot/${{ matrix.tag }}
