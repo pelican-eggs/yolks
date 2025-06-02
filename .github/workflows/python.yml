@@ -8,6 +8,9 @@ on:
       - master
     paths:
       - python/**
+permissions:
+  packages: write
+
 jobs:
   push:
     name: "yolks:python_${{ matrix.tag }}"
@@ -35,7 +38,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.REGISTRY_TOKEN }}
+          password: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
       - uses: docker/build-push-action@v6
         with:
           context: ./python
