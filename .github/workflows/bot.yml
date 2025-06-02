@@ -36,10 +36,14 @@ jobs:
           key: ${{ runner.os }}-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-buildx-
+      - id: lower-repo
+        name: Repository to lowercase
+        run: |
+          echo "repository=${GITHUB_REPOSITORY_OWNER@L}" >> $GITHUB_OUTPUT
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.repository_owner }}
+          username: ${{ steps.lower-repo.outputs.repository }}
           password: ${{ secrets.REGISTRY_TOKEN }}
       - uses: docker/build-push-action@v6
         with:
@@ -50,7 +54,7 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache-new
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/yolks:bot_${{ matrix.tag }}
+            ghcr.io/${{ steps.lower-repo.outputs.repository }}/yolks:bot_${{ matrix.tag }}
             ${{ github.repository_owner == 'pelican-eggs' && format('ghcr.io/parkervcp/yolks:bot_{0}', matrix.tag) || '' }}
       - name: Move cache
         run: |
@@ -74,7 +78,7 @@ jobs:
   #     - uses: docker/login-action@v1
   #       with:
   #         registry: ghcr.io
-  #         username: ${{ github.repository_owner }}
+  #         username: ${{ steps.lower-repo.outputs.repository }}
   #         password: ${{ secrets.REGISTRY_TOKEN }}
   #     - uses: docker/build-push-action@v6
   #       with:
