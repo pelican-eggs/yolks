@@ -28,6 +28,7 @@ jobs:
           - source
           - valheim
           - thebattleforwesnoth
+          - zandronum
           
     steps:
       - uses: actions/checkout@v4
