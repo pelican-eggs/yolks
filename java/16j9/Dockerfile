@@ -17,7 +17,8 @@ RUN         apt update -y \
                 libfreetype6 \
                 tini \
 				zip \
-				unzip
+				unzip \
+                jq
 
 ## Setup user and working directory
 RUN         useradd -m -d /home/container -s /bin/bash container
