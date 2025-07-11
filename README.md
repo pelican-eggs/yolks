@@ -146,6 +146,8 @@ is tagged correctly.
   * `ghcr.io/parkervcp/games:thebattleforwesnoth`
 * [`valheim`](/games/valheim)
   * `ghcr.io/parkervcp/games:valheim`
+* [`zandronum`](/games/zandronum)
+  * `ghcr.io/parkervcp/games:zandronum`
 
 ### [Golang](/go)
 
