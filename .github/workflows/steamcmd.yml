@@ -23,7 +23,8 @@ jobs:
           - ubuntu
           - dotnet
           - proton
-          - proton_8   
+          - proton_8
+          - proton_9
           - sniper
     steps:
       - uses: actions/checkout@v4

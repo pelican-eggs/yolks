@@ -310,8 +310,10 @@ is tagged correctly.
   * `ghcr.io/parkervcp/steamcmd:dotnet`
 * [`SteamCMD Proton`](/steamcmd/proton)
   * `ghcr.io/parkervcp/steamcmd:proton`
-* [`SteamCMD Proton`](/steamcmd/proton_8)
+* [`SteamCMD Proton 8`](/steamcmd/proton_8)
   * `ghcr.io/parkervcp/steamcmd:proton_8`
+* [`SteamCMD Proton 9`](/steamcmd/proton_9)
+  * `ghcr.io/parkervcp/steamcmd:proton_9`  
 * [`SteamCMD Sniper latest`](/steamcmd/sniper)
   * `ghcr.io/parkervcp/steamcmd:sniper`
 * [`SteamCMD Ubuntu latest LTS`](/steamcmd/ubuntu)
