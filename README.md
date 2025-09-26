@@ -188,6 +188,8 @@ is tagged correctly.
   * `ghcr.io/parkervcp/yolks:java_21`
 * [`java22`](/java/22)
   * `ghcr.io/parkervcp/yolks:java_22`
+* [`java25`](/java/25)
+  * `ghcr.io/parkervcp/yolks:java_25`
 
 ### [MariaDB](/mariadb)
 
