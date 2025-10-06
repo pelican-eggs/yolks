@@ -72,7 +72,7 @@ function RunSteamCMD { #[Input: int server=0 mod=1 optional_mod=2; int id]
 
         # Error checking for SteamCMD
         steamcmdExitCode=${PIPESTATUS[0]}
-        loggedErrors=$(grep -i "error\|failed" "${STEAMCMD_LOG}" | grep -iv "setlocal\|SDL\|steamservice\|thread\|libcurl")
+        loggedErrors=$(grep -i "error\|failed" "${STEAMCMD_LOG}" | grep -iv "setlocal\|SDL\|steamservice\|thread priority\|libcurl")
         if [[ -n ${loggedErrors} ]]; then # Catch errors (ignore setlocale, SDL, steamservice, thread priority, and libcurl warnings)
             # Soft errors
             if [[ -n $(grep -i "Timeout downloading item" "${STEAMCMD_LOG}") ]]; then # Mod download timeout
@@ -88,25 +88,26 @@ function RunSteamCMD { #[Input: int server=0 mod=1 optional_mod=2; int id]
                 break
             # Fatal errors
             elif [[ -n $(grep -i "Invalid Password\|two-factor\|No subscription" "${STEAMCMD_LOG}") ]]; then # Wrong username/password, Steam Guard is turned on, or host is using anonymous account
-                echo -e "\n${RED}[UPDATE]: Cannot login to Steam - Improperly configured account and/or credentials"
+                echo -e "\n${RED}[UPDATE]: Cannot login to Steam - Improperly configured account and/or credentials${NC}"
                 echo -e "\t${YELLOW}Please contact your administrator/host and give them the following message:${NC}"
                 echo -e "\t${CYAN}Your Egg, or your client's server, is not configured with valid Steam credentials.${NC}"
-                echo -e "\t${CYAN}Either the username/password is wrong, or Steam Guard is not fully disabled"
+                echo -e "\t${CYAN}Either the username/password is wrong, or Steam Guard is not fully disabled${NC}"
                 echo -e "\t${CYAN}in accordance to this Egg's documentation/README.${NC}\n"
                 exit 1
-            elif [[ -n $(grep -i "Download item" "${STEAMCMD_LOG}") ]]; then # Steam account does not own base game for mod downloads, or unknown
-                echo -e "\n${RED}[UPDATE]: Cannot download mod - Download failed"
-                echo -e "\t${YELLOW}While unknown, this error is likely due to your host's Steam account not owning the base game.${NC}"
+            elif [[ -n $(grep -i "Download item" "${STEAMCMD_LOG}") ]]; then # Steam account does not own base game for mod downloads, account rate-limit, or unknown
+                echo -e "\n${RED}[UPDATE]: Cannot download mod - Download failed${NC}"
+                echo -e "\t${YELLOW}While unknown, this error is likely due to your host's Steam account not owning the base game,${NC}"
+                echo -e "\t${YELLOW}or the account is being rate-limited by Steam.${NC}"
                 echo -e "\t${YELLOW}(Please contact your administrator/host if this issue persists)${NC}\n"
                 exit 1
             elif [[ -n $(grep -i "0x202\|0x212" "${STEAMCMD_LOG}") ]]; then # Not enough disk space
-                echo -e "\n${RED}[UPDATE]: Unable to complete download - Not enough storage"
+                echo -e "\n${RED}[UPDATE]: Unable to complete download - Not enough storage${NC}"
                 echo -e "\t${YELLOW}You have run out of your allotted disk space.${NC}"
                 echo -e "\t${YELLOW}Please contact your administrator/host for potential storage upgrades.${NC}\n"
                 exit 1
             elif [[ -n $(grep -i "0x606" "${STEAMCMD_LOG}") ]]; then # Disk write failure
-                echo -e "\n${RED}[UPDATE]: Unable to complete download - Disk write failure"
-                echo -e "\t${YELLOW}This is normally caused by directory permissions issues,"
+                echo -e "\n${RED}[UPDATE]: Unable to complete download - Disk write failure${NC}"
+                echo -e "\t${YELLOW}This is normally caused by directory permissions issues,${NC}"
                 echo -e "\t${YELLOW}but could be a more serious hardware issue.${NC}"
                 echo -e "\t${YELLOW}(Please contact your administrator/host if this issue persists)${NC}\n"
                 exit 1
@@ -422,11 +423,12 @@ fi
 
 # Replace Startup Command variables
 modifiedStartup=`eval echo $(echo ${STARTUP} | sed -e 's/{{/${/g' -e 's/}}/}/g')`
+# Convert PAR file to single-line string
+serverParams=$(sed '/^\/\//d' ${SERVER_PARAM_FILE} | tr '\n' ' ' | tr -s ' ')
 
 # Start the Server
-serverParams=$(sed '/^\/\//d' ${SERVER_PARAM_FILE} | tr '\n' ' ' | tr -s ' ')
 echo -e "\n${GREEN}[STARTUP]:${NC} Starting server with the following startup parameters:"
-echo -e "${CYAN}./${SERVER_BINARY} ${serverParams}${NC}\n"
+echo -e "${CYAN}${modifiedStartup/-par=${SERVER_PARAM_FILE}/$serverParams}${NC}\n"
 if [[ "$PARAM_NOLOGS" == "1" ]]; then
     ${modifiedStartup}
 else
