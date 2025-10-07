@@ -27,10 +27,11 @@ jobs:
           - '3.11'
           - '3.12'
           - '3.13'
+          - '3.14'
     steps:
       - uses: actions/checkout@v4
       # Setup QEMU for ARM64 Build
-      - uses: docker/setup-qemu-action@v3          
+      - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
         with:
           buildkitd-flags: --debug

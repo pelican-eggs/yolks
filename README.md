@@ -286,6 +286,8 @@ is tagged correctly.
   * `ghcr.io/parkervcp/yolks:python_3.12`
 * [`python3.13`](/python/3.13)
   * `ghcr.io/parkervcp/yolks:python_3.13`
+* [`python3.14`](/python/3.13)
+  * `ghcr.io/parkervcp/yolks:python_3.14`
 
 ### [Redis](/redis)
 
