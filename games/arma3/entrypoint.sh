@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Arma 3 Yolk Entrypoint - entrypoint.sh
-# Date: 2025/03/24
+# Date: 2025/10/15
 # Copyright (C) 2025  David Wolfe (Red-Thirten) and contributors
 # Contributors: Aussie Server Hosts (https://aussieserverhosts.com/), Stephen White (SilK)
 # 
@@ -130,12 +130,11 @@ function RunSteamCMD { #[Input: int server=0 mod=1 optional_mod=2; int id]
                 if [[ $1 == 1 ]]; then # Regular mod
                     # Move any .bikey's to the keys directory
                     find "${WORKSHOP_DIR}/content/${GAME_ID}/$2" -name "*.bikey" -type f -exec cp -t "keys" {} +
-                    # Make a hard link copy of the downloaded mod to the current directory if it doesn't already exist
-                    if [[ ! -d "@$2" ]]; then
-                        echo -e "\tMaking ${CYAN}hard link${NC} copy of mod to: ${CYAN}$(pwd)/@$2${NC}"
-                        mkdir @$2
-                        cp -al ${WORKSHOP_DIR}/content/${GAME_ID}/$2/* @$2/
-                    fi
+                    # Make a fresh hard link copy of the downloaded mod to the current directory
+                    echo -e "\tMaking ${CYAN}hard link${NC} copy of mod to: ${CYAN}$(pwd)/@$2${NC}"
+                    rm -rf @$2
+                    mkdir @$2
+                    cp -al ${WORKSHOP_DIR}/content/${GAME_ID}/$2/* @$2/
                     # Make the hard link copy's contents all lowercase
                     # (This complies with Arma's mod-folder rules while not disturbing the mod's SteamCMD source files)
                     ModsLowercase @$2
@@ -149,7 +148,7 @@ function RunSteamCMD { #[Input: int server=0 mod=1 optional_mod=2; int id]
                     echo -e "\tMod is an ${CYAN}optional mod${NC}. Deleting mod files to save space..."
                     rm -r ${WORKSHOP_DIR}/content/${GAME_ID}/$2
                     # Create a directory so time-based detection of auto updates works correctly
-                    mkdir @${2}_optional
+                    mkdir -p "@${2}_optional" && touch "@${2}_optional"
                     touch "@${2}_optional/DON'T DELETE THIS DIRECTORY - USED FOR AUTO UPDATES"
                 fi
                 echo -e "${GREEN}[UPDATE]: Mod download/update successful!${NC}"
@@ -274,7 +273,7 @@ if [[ ${UPDATE_SERVER} == 1 ]]; then
                 latestUpdate=$(curl -sL https://steamcommunity.com/sharedfiles/filedetails/changelog/$modID | grep '<p id=' | head -1 | cut -d'"' -f2)
 
                 # If the update time is valid and newer than the local directory's creation date, or the mod hasn't been downloaded yet, download the mod
-                if [[ ! -d $modDir ]] || [[ ( -n $latestUpdate ) && ( $latestUpdate =~ ^[0-9]+$ ) && ( $latestUpdate > $(find $modDir | head -1 | xargs stat -c%Y) ) ]]; then
+                if [[ ! -d $modDir ]] || [[ ( -n $latestUpdate ) && ( $latestUpdate =~ ^[0-9]+$ ) && ( $latestUpdate > $(stat -c %Y "$modDir") ) ]]; then
                     # Get the mod's name from the Workshop page as well
                     modName=$(curl -sL https://steamcommunity.com/sharedfiles/filedetails/changelog/$modID | grep 'workshopItemTitle' | cut -d'>' -f2 | cut -d'<' -f1)
                     if [[ -z $modName ]]; then # Set default name if unavailable
