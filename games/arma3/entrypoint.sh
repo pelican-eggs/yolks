@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Arma 3 Yolk Entrypoint - entrypoint.sh
-# Date: 2025/03/24
+# Date: 2025/10/15
 # Copyright (C) 2025  David Wolfe (Red-Thirten) and contributors
 # Contributors: Aussie Server Hosts (https://aussieserverhosts.com/), Stephen White (SilK)
 # 
@@ -72,7 +72,7 @@ function RunSteamCMD { #[Input: int server=0 mod=1 optional_mod=2; int id]
 
         # Error checking for SteamCMD
         steamcmdExitCode=${PIPESTATUS[0]}
-        loggedErrors=$(grep -i "error\|failed" "${STEAMCMD_LOG}" | grep -iv "setlocal\|SDL\|steamservice\|thread\|libcurl")
+        loggedErrors=$(grep -i "error\|failed" "${STEAMCMD_LOG}" | grep -iv "setlocal\|SDL\|steamservice\|thread priority\|libcurl")
         if [[ -n ${loggedErrors} ]]; then # Catch errors (ignore setlocale, SDL, steamservice, thread priority, and libcurl warnings)
             # Soft errors
             if [[ -n $(grep -i "Timeout downloading item" "${STEAMCMD_LOG}") ]]; then # Mod download timeout
@@ -88,25 +88,26 @@ function RunSteamCMD { #[Input: int server=0 mod=1 optional_mod=2; int id]
                 break
             # Fatal errors
             elif [[ -n $(grep -i "Invalid Password\|two-factor\|No subscription" "${STEAMCMD_LOG}") ]]; then # Wrong username/password, Steam Guard is turned on, or host is using anonymous account
-                echo -e "\n${RED}[UPDATE]: Cannot login to Steam - Improperly configured account and/or credentials"
+                echo -e "\n${RED}[UPDATE]: Cannot login to Steam - Improperly configured account and/or credentials${NC}"
                 echo -e "\t${YELLOW}Please contact your administrator/host and give them the following message:${NC}"
                 echo -e "\t${CYAN}Your Egg, or your client's server, is not configured with valid Steam credentials.${NC}"
-                echo -e "\t${CYAN}Either the username/password is wrong, or Steam Guard is not fully disabled"
+                echo -e "\t${CYAN}Either the username/password is wrong, or Steam Guard is not fully disabled${NC}"
                 echo -e "\t${CYAN}in accordance to this Egg's documentation/README.${NC}\n"
                 exit 1
-            elif [[ -n $(grep -i "Download item" "${STEAMCMD_LOG}") ]]; then # Steam account does not own base game for mod downloads, or unknown
-                echo -e "\n${RED}[UPDATE]: Cannot download mod - Download failed"
-                echo -e "\t${YELLOW}While unknown, this error is likely due to your host's Steam account not owning the base game.${NC}"
+            elif [[ -n $(grep -i "Download item" "${STEAMCMD_LOG}") ]]; then # Steam account does not own base game for mod downloads, account rate-limit, or unknown
+                echo -e "\n${RED}[UPDATE]: Cannot download mod - Download failed${NC}"
+                echo -e "\t${YELLOW}While unknown, this error is likely due to your host's Steam account not owning the base game,${NC}"
+                echo -e "\t${YELLOW}or the account is being rate-limited by Steam.${NC}"
                 echo -e "\t${YELLOW}(Please contact your administrator/host if this issue persists)${NC}\n"
                 exit 1
             elif [[ -n $(grep -i "0x202\|0x212" "${STEAMCMD_LOG}") ]]; then # Not enough disk space
-                echo -e "\n${RED}[UPDATE]: Unable to complete download - Not enough storage"
+                echo -e "\n${RED}[UPDATE]: Unable to complete download - Not enough storage${NC}"
                 echo -e "\t${YELLOW}You have run out of your allotted disk space.${NC}"
                 echo -e "\t${YELLOW}Please contact your administrator/host for potential storage upgrades.${NC}\n"
                 exit 1
             elif [[ -n $(grep -i "0x606" "${STEAMCMD_LOG}") ]]; then # Disk write failure
-                echo -e "\n${RED}[UPDATE]: Unable to complete download - Disk write failure"
-                echo -e "\t${YELLOW}This is normally caused by directory permissions issues,"
+                echo -e "\n${RED}[UPDATE]: Unable to complete download - Disk write failure${NC}"
+                echo -e "\t${YELLOW}This is normally caused by directory permissions issues,${NC}"
                 echo -e "\t${YELLOW}but could be a more serious hardware issue.${NC}"
                 echo -e "\t${YELLOW}(Please contact your administrator/host if this issue persists)${NC}\n"
                 exit 1
@@ -129,12 +130,11 @@ function RunSteamCMD { #[Input: int server=0 mod=1 optional_mod=2; int id]
                 if [[ $1 == 1 ]]; then # Regular mod
                     # Move any .bikey's to the keys directory
                     find "${WORKSHOP_DIR}/content/${GAME_ID}/$2" -name "*.bikey" -type f -exec cp -t "keys" {} +
-                    # Make a hard link copy of the downloaded mod to the current directory if it doesn't already exist
-                    if [[ ! -d "@$2" ]]; then
-                        echo -e "\tMaking ${CYAN}hard link${NC} copy of mod to: ${CYAN}$(pwd)/@$2${NC}"
-                        mkdir @$2
-                        cp -al ${WORKSHOP_DIR}/content/${GAME_ID}/$2/* @$2/
-                    fi
+                    # Make a fresh hard link copy of the downloaded mod to the current directory
+                    echo -e "\tMaking ${CYAN}hard link${NC} copy of mod to: ${CYAN}$(pwd)/@$2${NC}"
+                    rm -rf @$2
+                    mkdir @$2
+                    cp -al ${WORKSHOP_DIR}/content/${GAME_ID}/$2/* @$2/
                     # Make the hard link copy's contents all lowercase
                     # (This complies with Arma's mod-folder rules while not disturbing the mod's SteamCMD source files)
                     ModsLowercase @$2
@@ -148,7 +148,7 @@ function RunSteamCMD { #[Input: int server=0 mod=1 optional_mod=2; int id]
                     echo -e "\tMod is an ${CYAN}optional mod${NC}. Deleting mod files to save space..."
                     rm -r ${WORKSHOP_DIR}/content/${GAME_ID}/$2
                     # Create a directory so time-based detection of auto updates works correctly
-                    mkdir @${2}_optional
+                    mkdir -p "@${2}_optional" && touch "@${2}_optional"
                     touch "@${2}_optional/DON'T DELETE THIS DIRECTORY - USED FOR AUTO UPDATES"
                 fi
                 echo -e "${GREEN}[UPDATE]: Mod download/update successful!${NC}"
@@ -273,7 +273,7 @@ if [[ ${UPDATE_SERVER} == 1 ]]; then
                 latestUpdate=$(curl -sL https://steamcommunity.com/sharedfiles/filedetails/changelog/$modID | grep '<p id=' | head -1 | cut -d'"' -f2)
 
                 # If the update time is valid and newer than the local directory's creation date, or the mod hasn't been downloaded yet, download the mod
-                if [[ ! -d $modDir ]] || [[ ( -n $latestUpdate ) && ( $latestUpdate =~ ^[0-9]+$ ) && ( $latestUpdate > $(find $modDir | head -1 | xargs stat -c%Y) ) ]]; then
+                if [[ ! -d $modDir ]] || [[ ( -n $latestUpdate ) && ( $latestUpdate =~ ^[0-9]+$ ) && ( $latestUpdate > $(stat -c %Y "$modDir") ) ]]; then
                     # Get the mod's name from the Workshop page as well
                     modName=$(curl -sL https://steamcommunity.com/sharedfiles/filedetails/changelog/$modID | grep 'workshopItemTitle' | cut -d'>' -f2 | cut -d'<' -f1)
                     if [[ -z $modName ]]; then # Set default name if unavailable
@@ -422,11 +422,12 @@ fi
 
 # Replace Startup Command variables
 modifiedStartup=`eval echo $(echo ${STARTUP} | sed -e 's/{{/${/g' -e 's/}}/}/g')`
+# Convert PAR file to single-line string
+serverParams=$(sed '/^\/\//d' ${SERVER_PARAM_FILE} | tr '\n' ' ' | tr -s ' ')
 
 # Start the Server
-serverParams=$(sed '/^\/\//d' ${SERVER_PARAM_FILE} | tr '\n' ' ' | tr -s ' ')
 echo -e "\n${GREEN}[STARTUP]:${NC} Starting server with the following startup parameters:"
-echo -e "${CYAN}./${SERVER_BINARY} ${serverParams}${NC}\n"
+echo -e "${CYAN}${modifiedStartup/-par=${SERVER_PARAM_FILE}/$serverParams}${NC}\n"
 if [[ "$PARAM_NOLOGS" == "1" ]]; then
     ${modifiedStartup}
 else
