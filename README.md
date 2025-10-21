@@ -232,18 +232,6 @@ is tagged correctly.
 
 ### [Nodejs](/nodejs)
 
-* [`node12`](/nodejs/12)
-  * `ghcr.io/parkervcp/yolks:nodejs_12`
-* [`node14`](/nodejs/14)
-  * `ghcr.io/parkervcp/yolks:nodejs_14`
-* [`node16`](/nodejs/16)
-  * `ghcr.io/parkervcp/yolks:nodejs_16`
-* [`node17`](/nodejs/17)
-  * `ghcr.io/parkervcp/yolks:nodejs_17`
-* [`node18`](/nodejs/18)
-  * `ghcr.io/parkervcp/yolks:nodejs_18`
-* [`node19`](/nodejs/19)
-  * `ghcr.io/parkervcp/yolks:nodejs_19`
 * [`node20`](/nodejs/20)
   * `ghcr.io/parkervcp/yolks:nodejs_20`
 * [`node21`](/nodejs/21)
