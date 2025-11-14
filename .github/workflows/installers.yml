@@ -23,7 +23,7 @@ jobs:
           - debian
           - ubuntu
           - java_8
-          - java-17
+          - java_17
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-qemu-action@v3
