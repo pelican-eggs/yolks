@@ -99,6 +99,8 @@ is tagged correctly.
   * `ghcr.io/parkervcp/yolks:dotnet_8`
 * [`dotnet9.0`](/dotnet/9)
   * `ghcr.io/parkervcp/yolks:dotnet_9`
+* [`dotnet10.0`](/dotnet/10)
+  * `ghcr.io/parkervcp/yolks:dotnet_10`  
 
 ### [Elixir](/elixir)
 

@@ -26,6 +26,7 @@ jobs:
           - 7
           - 8
           - 9
+          - '10'
     steps:
       - uses: actions/checkout@v4
             # Setup QEMU for ARM64 Build
