@@ -269,13 +269,12 @@ is tagged correctly.
     * `ghcr.io/parkervcp/yolks:postgres_13`
   * [`Postgres 14`](/postgres/14)
     * `ghcr.io/parkervcp/yolks:postgres_14`
-	  * [`Postgres 14`](/postgres/14)
-    * `ghcr.io/parkervcp/yolks:postgres_16`  
-	  * [`Postgres 16`](/postgres/16)
-    * `ghcr.io/parkervcp/yolks:postgres_17`  
-	  * [`Postgres 17`](/postgres/17)
+  * [`Postgres 16`](/postgres/16)
+    * `ghcr.io/parkervcp/yolks:postgres_16`
+  * [`Postgres 17`](/postgres/17)
+    * `ghcr.io/parkervcp/yolks:postgres_17`
+  * [`Postgres 18`](/postgres/18)
     * `ghcr.io/parkervcp/yolks:postgres_18`
-	  * [`Postgres18`](/postgres/18)
 
 ### [Python](/python)
 
