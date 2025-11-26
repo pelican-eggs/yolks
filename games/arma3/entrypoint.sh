@@ -197,7 +197,7 @@ sleep 1
 cd ${HOME} || exit 1
 
 # Check for old Eggs
-if [[ -z ${PARAM_NOLOGS} ]]; then # PARAM_NOLOGS was not in the previous version
+if [[ -z ${PARAM_NOLOGS+x} ]]; then # PARAM_NOLOGS was not in the previous version
     echo -e "\n${RED}[STARTUP_ERR]: Please contact your administrator/host for support, and give them the following message:${NC}\n"
     echo -e "\t${CYAN}Your Arma 3 Egg is outdated and no longer supported.${NC}"
     echo -e "\t${CYAN}Please download the latest version at the following link, and install it in your panel:${NC}"
