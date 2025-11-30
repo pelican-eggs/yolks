@@ -41,7 +41,7 @@ RUN             apt install --install-recommends wine-stable-i386=10.0.0.0~bookw
                 apt install --install-recommends cabextract wine-binfmt -y
 
 # Set up Winetricks
-RUN	            wget -q -O /usr/sbin/winetricks https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks \
+RUN	            wget -q -O /usr/sbin/winetricks https://raw.githubusercontent.com/pelican-eggs/winetricks/master/src/winetricks \
                 && chmod +x /usr/sbin/winetricks
 
 ENV             HOME=/home/container
