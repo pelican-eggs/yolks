@@ -364,9 +364,5 @@ is tagged correctly.
   * `ghcr.io/parkervcp/installers:java_17`
 * [`java21-install`](/installers/java_21)
   * `ghcr.io/parkervcp/installers:java_21`
-* [`java22-install`](/installers/java_22)
-  * `ghcr.io/parkervcp/installers:java_22`
-* [`java23-install`](/installers/java_23)
-  * `ghcr.io/parkervcp/installers:java_23`
 * [`java25-install`](/installers/java_25)
   * `ghcr.io/parkervcp/installers:java_25`

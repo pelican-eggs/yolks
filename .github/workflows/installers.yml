@@ -26,8 +26,6 @@ jobs:
           - java_11
           - java_17
           - java_21
-          - java_22
-          - java_23
           - java_25
     steps:
       - uses: actions/checkout@v4
