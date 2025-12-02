@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   push:
-    name: "installers:{{ matrix.tag }}"
+    name: "installers:${{ matrix.tag }}"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
