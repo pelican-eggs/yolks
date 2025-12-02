@@ -357,16 +357,16 @@ is tagged correctly.
 * [`ubuntu-install`](/installers/ubuntu)
   * `ghcr.io/parkervcp/installers:ubuntu`
 * [`java8-install`](/installers/java_8)
-  * `ghcr.io/parkervcp/yolks:java_8`
+  * `ghcr.io/parkervcp/installers:java_8`
 * [`java11-install`](/installers/java_11)
-  * `ghcr.io/parkervcp/yolks:java_11`
+  * `ghcr.io/parkervcp/installers:java_11`
 * [`java17-install`](/installers/java_17)
-  * `ghcr.io/parkervcp/yolks:java_17`
+  * `ghcr.io/parkervcp/installers:java_17`
 * [`java21-install`](/installers/java_21)
-  * `ghcr.io/parkervcp/yolks:java_21`
+  * `ghcr.io/parkervcp/installers:java_21`
 * [`java22-install`](/installers/java_22)
-  * `ghcr.io/parkervcp/yolks:java_22`
+  * `ghcr.io/parkervcp/installers:java_22`
 * [`java23-install`](/installers/java_23)
-  * `ghcr.io/parkervcp/yolks:java_23`
+  * `ghcr.io/parkervcp/installers:java_23`
 * [`java25-install`](/installers/java_25)
-  * `ghcr.io/parkervcp/yolks:java_25`
+  * `ghcr.io/parkervcp/installers:java_25`
