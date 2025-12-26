@@ -64,12 +64,19 @@ fi
 if [[ $WINETRICKS_RUN =~ mono ]]; then
         echo "Installing mono"
         WINETRICKS_RUN=${WINETRICKS_RUN/mono}
+        MONO_VERSION=$(curl -s https://api.github.com/repos/wine-mono/wine-mono/releases/latest | grep -Po '"tag_name": "\K.*?(?=")')
+        MONO_URL="https://github.com/wine-mono/wine-mono/releases/download/${MONO_VERSION}/wine-mono-${MONO_VERSION#wine-mono-}-x86.msi"
+        
+        if [ -z "$MONO_VERSION" ]; then
+                echo"Failed to fetch latest Wine Mono version."
+        else
+                if [ ! -f "$WINEPREFIX/mono.msi" ]; then
+                        wget -q -O $WINEPREFIX/mono.msi $MONO_URL
+                fi
 
-        if [ ! -f "$WINEPREFIX/mono.msi" ]; then
-                wget -q -O $WINEPREFIX/mono.msi https://dl.winehq.org/wine/wine-mono/9.1.0/wine-mono-9.1.0-x86.msi
+                wine msiexec /i $WINEPREFIX/mono.msi /qn /quiet /norestart /log $WINEPREFIX/mono_install.log
         fi
 
-        wine msiexec /i $WINEPREFIX/mono.msi /qn /quiet /norestart /log $WINEPREFIX/mono_install.log
 fi
 
 # List and install other packages
