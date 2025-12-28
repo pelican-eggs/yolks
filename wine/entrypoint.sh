@@ -10,6 +10,9 @@ wine --version
 INTERNAL_IP=$(ip route get 1 | awk '{print $(NF-2);exit}')
 export INTERNAL_IP
 
+# Set an ammount of colums for wine to not wrap
+stty columns 250
+
 ## just in case someone removed the defaults.
 if [ "${STEAM_USER}" == "" ]; then
     echo -e "steam user is not set.\n"
