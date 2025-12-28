@@ -29,328 +29,334 @@ is tagged correctly.
 ### [Oses](/oses)
 
 * [alpine](/oses/alpine)
-  * `ghcr.io/parkervcp/yolks:alpine`
+  * `ghcr.io/pelican-eggs/yolks:alpine`
 * [debian](/oses/debian)
-  * `ghcr.io/parkervcp/yolks:debian`
+  * `ghcr.io/pelican-eggs/yolks:debian`
 * [ubuntu](/oses/ubuntu)
-  * `ghcr.io/parkervcp/yolks:ubuntu`
+  * `ghcr.io/pelican-eggs/yolks:ubuntu`
 
 ### [Apps](/apps)
 
 * [`uptimekuma`](/apps/uptimekuma)
-  * `ghcr.io/parkervcp/yolks:apps_uptimekuma`
+  * `ghcr.io/pelican-eggs/yolks:apps_uptimekuma`
 
 ### [Bot](/bot)
 
 * [`bastion`](/bot/bastion)
-  * `ghcr.io/parkervcp/yolks:bot_bastion`
+  * `ghcr.io/pelican-eggs/yolks:bot_bastion`
 * [`parkertron`](/bot/parkertron)
-  * `ghcr.io/parkervcp/yolks:bot_parkertron`
+  * `ghcr.io/pelican-eggs/yolks:bot_parkertron`
 * [`redbot`](/bot/red)
-  * `ghcr.io/parkervcp/yolks:bot_red`
+  * `ghcr.io/pelican-eggs/yolks:bot_red`
 * [`sinusbot`](/bot/sinusbot)
-  * `ghcr.io/parkervcp/yolks:bot_sinusbot`
+  * `ghcr.io/pelican-eggs/yolks:bot_sinusbot`
 
 ### [Box64](/box64)
 
 * [`Box64`](/box64)
-  * `ghcr.io/parkervcp/yolks:box64`
+  * `ghcr.io/pelican-eggs/yolks:box64`
 
 ### [Bun](/bun)
 
 * [`Bun Canary`](/bun/canary)
-  * `ghcr.io/parkervcp/yolks:bun_canary`
+  * `ghcr.io/pelican-eggs/yolks:bun_canary`
 * [`Bun Latest`](/bun/latest)
-  * `ghcr.io/parkervcp/yolks:bun_latest`
+  * `ghcr.io/pelican-eggs/yolks:bun_latest`
 
 ### [Cassandra](/cassandra)
 
 * [`cassandra_java8_python27`](/cassandra/cassandra_java8_python2)
-  * `ghcr.io/parkervcp/yolks:cassandra_java11_python2`
+  * `ghcr.io/pelican-eggs/yolks:cassandra_java11_python2`
 * [`cassandra_java11_python3`](/cassandra/cassandra_java11_python3)
-  * `ghcr.io/parkervcp/yolks:cassandra_java11_python3`
+  * `ghcr.io/pelican-eggs/yolks:cassandra_java11_python3`
 
 ### [Dart](/dart)
 
 * [`dart2.17`](/dart/2.17)
-  * `ghcr.io/parkervcp/yolks:dart_2.17`
+  * `ghcr.io/pelican-eggs/yolks:dart_2.17`
 * [`dart2.18`](/dart/2.18)
-  * `ghcr.io/parkervcp/yolks:dart_2.18`
+  * `ghcr.io/pelican-eggs/yolks:dart_2.18`
 * [`dart2.19`](/dart/2.19)
-  * `ghcr.io/parkervcp/yolks:dart_2.19`
+  * `ghcr.io/pelican-eggs/yolks:dart_2.19`
 * [`dart3.3`](/dart/3.3)
-  * `ghcr.io/parkervcp/yolks:dart_3.3`
+  * `ghcr.io/pelican-eggs/yolks:dart_3.3`
 * [`dart stable`](/dart/stable)
-  * `ghcr.io/parkervcp/yolks:dart_stable`
+  * `ghcr.io/pelican-eggs/yolks:dart_stable`
 
 ### [dotNet](/dotnet)
 
 * [`dotnet2.1`](/dotnet/2.1)
-  * `ghcr.io/parkervcp/yolks:dotnet_2.1`
+  * `ghcr.io/pelican-eggs/yolks:dotnet_2.1`
 * [`dotnet3.1`](/dotnet/3.1)
-  * `ghcr.io/parkervcp/yolks:dotnet_3.1`
+  * `ghcr.io/pelican-eggs/yolks:dotnet_3.1`
 * [`dotnet5.0`](/dotnet/5)
-  * `ghcr.io/parkervcp/yolks:dotnet_5`
+  * `ghcr.io/pelican-eggs/yolks:dotnet_5`
 * [`dotnet6.0`](/dotnet/6)
-  * `ghcr.io/parkervcp/yolks:dotnet_6`
+  * `ghcr.io/pelican-eggs/yolks:dotnet_6`
 * [`dotnet7.0`](/dotnet/7)
-  * `ghcr.io/parkervcp/yolks:dotnet_7`
+  * `ghcr.io/pelican-eggs/yolks:dotnet_7`
 * [`dotnet8.0`](/dotnet/8)
-  * `ghcr.io/parkervcp/yolks:dotnet_8`
+  * `ghcr.io/pelican-eggs/yolks:dotnet_8`
 * [`dotnet9.0`](/dotnet/9)
-  * `ghcr.io/parkervcp/yolks:dotnet_9`
+  * `ghcr.io/pelican-eggs/yolks:dotnet_9`
 * [`dotnet10.0`](/dotnet/10)
-  * `ghcr.io/parkervcp/yolks:dotnet_10`  
+  * `ghcr.io/pelican-eggs/yolks:dotnet_10`  
 
 ### [Elixir](/elixir)
 
 * [`elixir 1.12`](/elixir/1.12)
-  * `ghcr.io/parkervcp/yolks:elixir_1.12`
+  * `ghcr.io/pelican-eggsp/yolks:elixir_1.12`
 * [`elixir 1.13`](/elixir/1.13)
-  * `ghcr.io/parkervcp/yolks:elixir_1.13`
+  * `ghcr.io/pelican-eggs/yolks:elixir_1.13`
 * [`elixir 1.14`](/elixir/1.14)
-  * `ghcr.io/parkervcp/yolks:elixir_1.14`
+  * `ghcr.io/pelican-eggs/yolks:elixir_1.14`
 * [`elixir 1.15`](/elixir/1.12)
-  * `ghcr.io/parkervcp/yolks:elixir_1.15`
+  * `ghcr.io/pelican-eggs/yolks:elixir_1.15`
 * [`elixir latest`](/elixir/latest)
-  * `ghcr.io/parkervcp/yolks:elixir_latest`
+  * `ghcr.io/pelican-eggs/yolks:elixir_latest`
 
 ### [Erlang](/erlang)
 
 * [`erlang22`](/erlang/22)
-  * `ghcr.io/parkervcp/yolks:erlang_22`
+  * `ghcr.io/pelican-eggs/yolks:erlang_22`
 * [`erlang23`](/erlang/23)
-  * `ghcr.io/parkervcp/yolks:erlang_23`
+  * `ghcr.io/pelican-eggs/yolks:erlang_23`
 * [`erlang24`](/erlang/24)
-  * `ghcr.io/parkervcp/yolks:erlang_24`
+  * `ghcr.io/pelican-eggs/yolks:erlang_24`
 
 ### [Games](/games)
 
 * [`altv`](/games/altv)
-  * `ghcr.io/parkervcp/games:altv`
+  * `ghcr.io/pelican-eggs/games:altv`
 * [`arma3`](/games/arma3)
-  * `ghcr.io/parkervcp/games:arma3`
+  * `ghcr.io/pelican-eggs/games:arma3`
 * [`dayz`](/games/dayz)
-  * `ghcr.io/parkervcp/games:dayz`
+  * `ghcr.io/pelican-eggs/games:dayz`
 * [`minetest`](/games/minetest)
-  * `ghcr.io/parkervcp/games:minetest`  
+  * `ghcr.io/pelican-eggs/games:minetest`  
 * [`mohaa`](games/mohaa)
-  * `ghcr.io/parkervcp/games:mohaa`  
+  * `ghcr.io/pelican-eggs/games:mohaa`  
 * [`Multi Theft Auto: San Andreas`](games/mta)
-  * `ghcr.io/parkervcp/games:mta` 
+  * `ghcr.io/pelican-eggs/games:mta` 
 * [`Rust (dedicated server)`](games/rust)
-  * `ghcr.io/parkervcp/games:rust`      
+  * `ghcr.io/pelican-eggs/games:rust`      
 * [`samp`](/games/samp)
-  * `ghcr.io/parkervcp/games:samp`  
+  * `ghcr.io/pelican-eggs/games:samp`  
 * [`source`](/games/source)
-  * `ghcr.io/parkervcp/games:source`
+  * `ghcr.io/pelican-eggs/games:source`
 * [`thebattleforwesnoth`](/games/thebattleforwesnoth)
-  * `ghcr.io/parkervcp/games:thebattleforwesnoth`
+  * `ghcr.io/pelican-eggs/games:thebattleforwesnoth`
 * [`valheim`](/games/valheim)
-  * `ghcr.io/parkervcp/games:valheim`
+  * `ghcr.io/pelican-eggs/games:valheim`
 * [`zandronum`](/games/zandronum)
-  * `ghcr.io/parkervcp/games:zandronum`
+  * `ghcr.io/pelican-eggs/games:zandronum`
 
 ### [Golang](/go)
 
 * [`go1.14`](/go/1.14)
-  * `ghcr.io/parkervcp/yolks:go_1.14`
+  * `ghcr.io/pelican-eggs/yolks:go_1.14`
 * [`go1.15`](/go/1.15)
-  * `ghcr.io/parkervcp/yolks:go_1.15`
+  * `ghcr.io/pelican-eggs/yolks:go_1.15`
 * [`go1.16`](/go/1.16)
-  * `ghcr.io/parkervcp/yolks:go_1.16`
+  * `ghcr.io/pelican-eggs/yolks:go_1.16`
 * [`go1.17`](/go/1.17)
-  * `ghcr.io/parkervcp/yolks:go_1.17`
+  * `ghcr.io/pelican-eggs/yolks:go_1.17`
 * [`go1.18`](/go/1.18)
-  * `ghcr.io/parkervcp/yolks:go_1.18`
+  * `ghcr.io/pelican-eggs/yolks:go_1.18`
 * [`go1.19`](/go/1.19)
-  * `ghcr.io/parkervcp/yolks:go_1.19`
+  * `ghcr.io/pelican-eggs/yolks:go_1.19`
 * [`go1.20`](/go/1.20)
-  * `ghcr.io/parkervcp/yolks:go_1.20`
+  * `ghcr.io/pelican-eggs/yolks:go_1.20`
 * [`go1.21`](/go/1.21)
-  * `ghcr.io/parkervcp/yolks:go_1.21`
+  * `ghcr.io/pelican-eggs/yolks:go_1.21`
 * [`go1.22`](/go/1.22)
-  * `ghcr.io/parkervcp/yolks:go_1.22`
+  * `ghcr.io/pelican-eggs/yolks:go_1.22`
 * [`go1.23`](/go/1.23)
-  * `ghcr.io/parkervcp/yolks:go_1.23`
+  * `ghcr.io/pelican-eggs/yolks:go_1.23`
 
 ### [Java](/java)
 
 * [`java8`](/java/8)
-  * `ghcr.io/parkervcp/yolks:java_8`
+  * `ghcr.io/pelican-eggs/yolks:java_8`
 * [`java11`](/java/11)
-  * `ghcr.io/parkervcp/yolks:java_11`
+  * `ghcr.io/pelican-eggs/yolks:java_11`
 * [`java16`](/java/16)
-  * `ghcr.io/parkervcp/yolks:java_16`
+  * `ghcr.io/pelican-eggs/yolks:java_16`
 * [`java17`](/java/17)
-  * `ghcr.io/parkervcp/yolks:java_17`
+  * `ghcr.io/pelican-eggs/yolks:java_17`
 * [`java19`](/java/19)
-  * `ghcr.io/parkervcp/yolks:java_19`
+  * `ghcr.io/pelican-eggs/yolks:java_19`
 * [`java21`](/java/21)
-  * `ghcr.io/parkervcp/yolks:java_21`
+  * `ghcr.io/pelican-eggs/yolks:java_21`
 * [`java22`](/java/22)
-  * `ghcr.io/parkervcp/yolks:java_22`
+  * `ghcr.io/pelican-eggs/yolks:java_22`
 * [`java25`](/java/25)
-  * `ghcr.io/parkervcp/yolks:java_25`
+  * `ghcr.io/pelican-eggs/yolks:java_25`
 
 ### [MariaDB](/mariadb)
 
   * [`MariaDB 10.3`](/mariadb/10.3)
-    * `ghcr.io/parkervcp/yolks:mariadb_10.3`
+    * `ghcr.io/pelican-eggs/yolks:mariadb_10.3`
   * [`MariaDB 10.4`](/mariadb/10.4)
-    * `ghcr.io/parkervcp/yolks:mariadb_10.4`
+    * `ghcr.io/pelican-eggs/yolks:mariadb_10.4`
   * [`MariaDB 10.5`](/mariadb/10.5)
-    * `ghcr.io/parkervcp/yolks:mariadb_10.5`
+    * `ghcr.io/pelican-eggs/yolks:mariadb_10.5`
   * [`MariaDB 10.6`](/mariadb/10.6)
-    * `ghcr.io/parkervcp/yolks:mariadb_10.6`
+    * `ghcr.io/pelican-eggs/yolks:mariadb_10.6`
   * [`MariaDB 10.7`](/mariadb/10.7)
-    * `ghcr.io/parkervcp/yolks:mariadb_10.7`
+    * `ghcr.io/pelican-eggs/yolks:mariadb_10.7`
   * [`MariaDB 11.2`](/mariadb/11.2)
-    * `ghcr.io/parkervcp/yolks:mariadb_11.2`
+    * `ghcr.io/pelican-eggs/yolks:mariadb_11.2`
   * [`MariaDB 11.3`](/mariadb/11.3)
-    * `ghcr.io/parkervcp/yolks:mariadb_11.3`
+    * `ghcr.io/pelican-eggs/yolks:mariadb_11.3`
   * [`MariaDB 11.4`](/mariadb/11.4)
-    * `ghcr.io/parkervcp/yolks:mariadb_11.4`
+    * `ghcr.io/pelican-eggs/yolks:mariadb_11.4`
   * [`MariaDB 11.5`](/mariadb/11.5)
-    * `ghcr.io/parkervcp/yolks:mariadb_11.5`
+    * `ghcr.io/pelican-eggs/yolks:mariadb_11.5`
   * [`MariaDB 11.6`](/mariadb/11.6)
-    * `ghcr.io/parkervcp/yolks:mariadb_11.6`
+    * `ghcr.io/pelican-eggs/yolks:mariadb_11.6`
 
 ### [MongoDB](/mongodb)
 
   * [`MongoDB 5`](/mongodb/5)
-    * `ghcr.io/parkervcp/yolks:mongodb_5`
+    * `ghcr.io/pelican-eggs/yolks:mongodb_5`
  * [`MongoDB 6`](/mongodb/6)
-    * `ghcr.io/parkervcp/yolks:mongodb_6`    
+    * `ghcr.io/pelican-eggs/yolks:mongodb_6`    
  * [`MongoDB 7`](/mongodb/7)
-    * `ghcr.io/parkervcp/yolks:mongodb_7`
+    * `ghcr.io/pelican-eggs/yolks:mongodb_7`
  * [`MongoDB 8`](/mongodb/8)
-    * `ghcr.io/parkervcp/yolks:mongodb_8` 
+    * `ghcr.io/pelican-eggs/yolks:mongodb_8` 
 
 ### [Mono](/mono)
 
 * [`mono_latest`](/mono/latest)
-  * `ghcr.io/parkervcp/yolks:mono_latest`
+  * `ghcr.io/pelican-eggs/yolks:mono_latest`
 
 ### [Nodejs](/nodejs)
 
 * [`node20`](/nodejs/20)
-  * `ghcr.io/parkervcp/yolks:nodejs_20`
+  * `ghcr.io/pelican-eggs/yolks:nodejs_20`
 * [`node21`](/nodejs/21)
-  * `ghcr.io/parkervcp/yolks:nodejs_21`
+  * `ghcr.io/pelican-eggs/yolks:nodejs_21`
 * [`node22`](/nodejs/22)
-  * `ghcr.io/parkervcp/yolks:nodejs_22`  
+  * `ghcr.io/pelican-eggs/yolks:nodejs_22`  
 * [`node23`](/nodejs/23)
-  * `ghcr.io/parkervcp/yolks:nodejs_23`
+  * `ghcr.io/pelican-eggs/yolks:nodejs_23`
 * [`node24`](/nodejs/24)
-  * `ghcr.io/parkervcp/yolks:nodejs_24`  
+  * `ghcr.io/pelican-eggs/yolks:nodejs_24`  
   
 ### [PostgreSQL](/postgres)
 
   * [`Postgres 9`](/postgres/9)
-    * `ghcr.io/parkervcp/yolks:postgres_9`
+    * `ghcr.io/pelican-eggs/yolks:postgres_9`
   * [`Postgres 10`](/postgres/10)
-    * `ghcr.io/parkervcp/yolks:postgres_10`
+    * `ghcr.io/pelican-eggs/yolks:postgres_10`
   * [`Postgres 11`](/postgres/11)
-    * `ghcr.io/parkervcp/yolks:postgres_11`
+    * `ghcr.io/pelican-eggs/yolks:postgres_11`
   * [`Postgres 12`](/postgres/12)
-    * `ghcr.io/parkervcp/yolks:postgres_12`
+    * `ghcr.io/pelican-eggs/yolks:postgres_12`
   * [`Postgres 13`](/postgres/13)
-    * `ghcr.io/parkervcp/yolks:postgres_13`
+    * `ghcr.io/pelican-eggs/yolks:postgres_13`
   * [`Postgres 14`](/postgres/14)
-    * `ghcr.io/parkervcp/yolks:postgres_14`
+    * `ghcr.io/pelican-eggs/yolks:postgres_14`
   * [`Postgres 16`](/postgres/16)
-    * `ghcr.io/parkervcp/yolks:postgres_16`
+    * `ghcr.io/pelican-eggs/yolks:postgres_16`
   * [`Postgres 17`](/postgres/17)
-    * `ghcr.io/parkervcp/yolks:postgres_17`
+    * `ghcr.io/pelican-eggs/yolks:postgres_17`
   * [`Postgres 18`](/postgres/18)
-    * `ghcr.io/parkervcp/yolks:postgres_18`
+    * `ghcr.io/pelican-eggs/yolks:postgres_18`
 
 ### [Python](/python)
 
 * [`python3.7`](/python/3.7)
-  * `ghcr.io/parkervcp/yolks:python_3.7`
+  * `ghcr.io/pelican-eggs/yolks:python_3.7`
 * [`python3.8`](/python/3.8)
-  * `ghcr.io/parkervcp/yolks:python_3.8`
+  * `ghcr.io/pelican-eggs/yolks:python_3.8`
 * [`python3.9`](/python/3.9)
-  * `ghcr.io/parkervcp/yolks:python_3.9`
+  * `ghcr.io/pelican-eggs/yolks:python_3.9`
 * [`python3.10`](/python/3.10)
-  * `ghcr.io/parkervcp/yolks:python_3.10`
+  * `ghcr.io/pelican-eggs/yolks:python_3.10`
 * [`python3.11`](/python/3.11)
-  * `ghcr.io/parkervcp/yolks:python_3.11`
+  * `ghcr.io/pelican-eggs/yolks:python_3.11`
 * [`python3.12`](/python/3.12)
-  * `ghcr.io/parkervcp/yolks:python_3.12`
+  * `ghcr.io/pelican-eggs/yolks:python_3.12`
 * [`python3.13`](/python/3.13)
-  * `ghcr.io/parkervcp/yolks:python_3.13`
+  * `ghcr.io/pelican-eggs/yolks:python_3.13`
 * [`python3.14`](/python/3.14)
-  * `ghcr.io/parkervcp/yolks:python_3.14`
+  * `ghcr.io/pelican-eggs/yolks:python_3.14`
 
 ### [Redis](/redis)
 
   * [`Redis 5`](/redis/5)
-    * `ghcr.io/parkervcp/yolks:redis_5`
+    * `ghcr.io/pelican-eggs/yolks:redis_5`
   * [`Redis 6`](/redis/6)
-    * `ghcr.io/parkervcp/yolks:redis_6`
+    * `ghcr.io/pelican-eggs/yolks:redis_6`
   * [`Redis 7`](/redis/7)
-    * `ghcr.io/parkervcp/yolks:redis_7`
+    * `ghcr.io/pelican-eggs/yolks:redis_7`
   * [`Redis 8`](/redis/8)
-    * `ghcr.io/parkervcp/yolks:redis_8`    
+    * `ghcr.io/pelican-eggs/yolks:redis_8`    
 
 ### [Rust](/rust)
 
 * ['rust1.56'](/rust/1.56)
-  * `ghcr.io/parkervcp/yolks:rust_1.56`
+  * `ghcr.io/pelican-eggs/yolks:rust_1.56`
 * ['rust1.60'](/rust/1.60)
-  * `ghcr.io/parkervcp/yolks:rust_1.60`
+  * `ghcr.io/pelican-eggs/yolks:rust_1.60`
 * ['rust latest'](/rust/latest)
-  * `ghcr.io/parkervcp/yolks:rust_latest`
+  * `ghcr.io/pelican-eggs/yolks:rust_latest`
 
 ### [SteamCMD](/steamcmd)
 * [`SteamCMD Debian lastest`](/steamcmd/debian)
-  * `ghcr.io/parkervcp/steamcmd:debian`
+  * `ghcr.io/pelican-eggs/steamcmd:debian`
 * [`SteamCMD Debian Dotnet`](/steamcmd/dotnet)
-  * `ghcr.io/parkervcp/steamcmd:dotnet`
+  * `ghcr.io/pelican-eggs/steamcmd:dotnet`
 * [`SteamCMD Proton`](/steamcmd/proton)
-  * `ghcr.io/parkervcp/steamcmd:proton`
+  * `ghcr.io/pelican-eggs/steamcmd:proton`
 * [`SteamCMD Proton`](/steamcmd/proton_8)
-  * `ghcr.io/parkervcp/steamcmd:proton_8`
+  * `ghcr.io/pelican-eggs/steamcmd:proton_8`
 * [`SteamCMD Sniper latest`](/steamcmd/sniper)
-  * `ghcr.io/parkervcp/steamcmd:sniper`
+  * `ghcr.io/pelican-eggs/steamcmd:sniper`
 * [`SteamCMD Ubuntu latest LTS`](/steamcmd/ubuntu)
-  * `ghcr.io/parkervcp/steamcmd:ubuntu`
+  * `ghcr.io/pelican-eggs/steamcmd:ubuntu`
 
 ### [Voice](/voice)
 * [`Mumble`](/voice/mumble)
-  * `ghcr.io/parkervcp/yolks:voice_mumble`
+  * `ghcr.io/pelican-eggs/yolks:voice_mumble`
 * [`TeaSpeak`](/voice/teaspeak)
-  * `ghcr.io/parkervcp/yolks:voice_teaspeak`
+  * `ghcr.io/pelican-eggs/yolks:voice_teaspeak`
 
 ### [Wine](/wine)
 
-* [`Wine`](/wine)
-  * `ghcr.io/parkervcp/yolks:wine_7`
-  * `ghcr.io/parkervcp/yolks:wine_8`
-  * `ghcr.io/parkervcp/yolks:wine_9`
-  * `ghcr.io/parkervcp/yolks:wine_10`
-  * `ghcr.io/parkervcp/yolks:wine_latest`
-  * `ghcr.io/parkervcp/yolks:wine_devel`
-  * `ghcr.io/parkervcp/yolks:wine_staging`
+* [`Wine 7 `](/wine/7)
+  * `ghcr.io/pelican-eggs/yolks:wine_7`
+* [`Wine 8`](/wine/8)
+  * `ghcr.io/pelican-eggs/yolks:wine_8`
+* [`Wine 9`](/wine/9)
+  * `ghcr.io/pelican-eggs/yolks:wine_9`
+* [`Wine 10`](/wine/10)
+  * `ghcr.io/pelican-eggs/yolks:wine_10`
+* [`Wine latest`](/wine/latest/)
+  * `ghcr.io/pelican-eggs/yolks:wine_latest`
+* [`Wine devel`](/wine/devel/)
+  * `ghcr.io/pelican-eggs/yolks:wine_devel`
+* [`Wine stagin`](/wine/staging/)
+  * `ghcr.io/pelican-eggs/yolks:wine_staging`
 
 ### [Installation Images](/installers)
 
 * [`alpine-install`](/installers/alpine)
-  * `ghcr.io/parkervcp/installers:alpine`
+  * `ghcr.io/pelican-eggs/installers:alpine`
 * [`debian-install`](/installers/debian)
-  * `ghcr.io/parkervcp/installers:debian`
+  * `ghcr.io/pelican-eggs/installers:debian`
 * [`ubuntu-install`](/installers/ubuntu)
-  * `ghcr.io/parkervcp/installers:ubuntu`
+  * `ghcr.io/pelican-eggs/installers:ubuntu`
 * [`java8-install`](/installers/java_8)
-  * `ghcr.io/parkervcp/installers:java_8`
+  * `ghcr.io/pelican-eggs/installers:java_8`
 * [`java11-install`](/installers/java_11)
-  * `ghcr.io/parkervcp/installers:java_11`
+  * `ghcr.io/pelican-eggs/installers:java_11`
 * [`java17-install`](/installers/java_17)
-  * `ghcr.io/parkervcp/installers:java_17`
+  * `ghcr.io/pelican-eggs/installers:java_17`
 * [`java21-install`](/installers/java_21)
-  * `ghcr.io/parkervcp/installers:java_21`
+  * `ghcr.io/pelican-eggs/installers:java_21`
 * [`java25-install`](/installers/java_25)
-  * `ghcr.io/parkervcp/installers:java_25`
+  * `ghcr.io/pelican-eggs/installers:java_25`
