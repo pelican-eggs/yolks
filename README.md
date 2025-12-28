@@ -327,7 +327,7 @@ is tagged correctly.
 
 ### [Wine](/wine)
 
-* [`Wine 7 `](/wine/7)
+* [`Wine 7`](/wine/7)
   * `ghcr.io/pelican-eggs/yolks:wine_7`
 * [`Wine 8`](/wine/8)
   * `ghcr.io/pelican-eggs/yolks:wine_8`
@@ -339,7 +339,7 @@ is tagged correctly.
   * `ghcr.io/pelican-eggs/yolks:wine_latest`
 * [`Wine devel`](/wine/devel/)
   * `ghcr.io/pelican-eggs/yolks:wine_devel`
-* [`Wine stagin`](/wine/staging/)
+* [`Wine staging`](/wine/staging/)
   * `ghcr.io/pelican-eggs/yolks:wine_staging`
 
 ### [Installation Images](/installers)
