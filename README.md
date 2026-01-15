@@ -132,6 +132,8 @@ is tagged correctly.
   * `ghcr.io/pelican-eggs/games:arma3`
 * [`dayz`](/games/dayz)
   * `ghcr.io/pelican-eggs/games:dayz`
+* [`hytale`](/games/hytale)
+  * `ghcr.io/pelican-eggs/games:hytale`
 * [`minetest`](/games/minetest)
   * `ghcr.io/pelican-eggs/games:minetest`  
 * [`mohaa`](games/mohaa)
