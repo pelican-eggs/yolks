@@ -105,7 +105,7 @@ install_downloader() {
     return 0
 }
 
-# check for updates
+# Check for updates
 check_for_updates() {
     msg BLUE "[update] Checking for Hytale server updates..."
 
