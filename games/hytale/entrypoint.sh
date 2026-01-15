@@ -49,6 +49,12 @@ mkdir -p /home/container/.tmp
 echo "java -version"
 java -version
 
+# Hytale Downloader Configuration
+DOWNLOADER_URL="https://downloader.hytale.com/hytale-downloader.zip"
+DOWNLOADER_BIN="${DOWNLOADER_BIN:-/home/container/hytale-downloader}"
+AUTO_UPDATE=${AUTO_UPDATE:-0}
+PATCHLINE=${PATCHLINE:-release}
+
 # Check for downloader updates first thing
 if [ -f "$DOWNLOADER_BIN" ]; then
     msg BLUE "[startup] Checking for downloader updates..."
@@ -58,12 +64,6 @@ if [ -f "$DOWNLOADER_BIN" ]; then
         msg YELLOW "  Note: Downloader update check completed"
     fi
 fi
-
-# Hytale Downloader Configuration
-DOWNLOADER_URL="https://downloader.hytale.com/hytale-downloader.zip"
-DOWNLOADER_BIN="${DOWNLOADER_BIN:-/home/container/hytale-downloader}"
-AUTO_UPDATE=${AUTO_UPDATE:-0}
-PATCHLINE=${PATCHLINE:-release}
 
 # Function to install Hytale Downloader
 install_downloader() {
