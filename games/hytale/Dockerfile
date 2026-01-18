@@ -11,7 +11,6 @@ RUN         apt update -y \
                 lsof \
                 ca-certificates \
                 openssl \
-				file \
                 git \
                 tar \
                 sqlite3 \
@@ -24,6 +23,7 @@ RUN         apt update -y \
                 unzip \
                 jq \
                 dbus \
+                file \
             && apt clean \
             && rm -rf /var/lib/apt/lists/*
 
