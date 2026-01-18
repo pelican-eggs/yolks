@@ -11,6 +11,7 @@ RUN         apt update -y \
                 lsof \
                 ca-certificates \
                 openssl \
+				file \
                 git \
                 tar \
                 sqlite3 \

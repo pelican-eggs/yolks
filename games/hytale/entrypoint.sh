@@ -50,14 +50,6 @@ mkdir -p /home/container/.tmp
 echo "java -version"
 java -version
 
-# Cleanup invalid version file (e.g., if it contains auth prompts)
-if [ -f "/home/container/.version" ]; then
-    if ! grep -qE '^[0-9]{4}\.[0-9]{2}\.[0-9]{2}-[a-f0-9]+' "/home/container/.version"; then
-        msg YELLOW "Warning: Invalid .version content detected; removing file"
-        rm -f "/home/container/.version"
-    fi
-fi
-
 # Hytale Downloader Configuration
 DOWNLOADER_URL="https://downloader.hytale.com/hytale-downloader.zip"
 DOWNLOADER_BIN="${DOWNLOADER_BIN:-/home/container/hytale-downloader}"
@@ -70,11 +62,18 @@ DOWNLOADER_ARGS=()
 PSAVER=${PSAVER:-0}
 PSAVER_RELEASES_URL="https://api.github.com/repos/nitrado/hytale-plugin-performance-saver/releases/latest"
 PSAVER_PLUGINS_DIR="/home/container/mods"
-PSAVER_JAR_PATTERN="Nitrado_PerformanceSaver*.jar"
+PSAVER_JAR_NAME="Nitrado_PerformanceSaver"
 
-# Auth is handled manually via URL; credentials file is optional but used when present
-if [ -n "$CREDENTIALS_PATH" ] && [ -f "$CREDENTIALS_PATH" ]; then
-    DOWNLOADER_ARGS+=("-credentials-path" "$CREDENTIALS_PATH")
+# Version and filter patterns
+VERSION_PATTERN='^[0-9]{4}\.[0-9]{2}\.[0-9]{2}-[a-f0-9]+'
+DOWNLOADER_OUTPUT_FILTER="Please visit|Path to credentials file|Authorization code:"
+
+# Cleanup invalid version file (e.g., if it contains auth prompts)
+if [ -f "/home/container/.version" ]; then
+    if ! grep -qE "$VERSION_PATTERN" "/home/container/.version"; then
+        msg YELLOW "Warning: Invalid .version content detected; removing file"
+        rm -f "/home/container/.version"
+    fi
 fi
 
 # Check for downloader updates first thing
@@ -165,7 +164,7 @@ check_for_updates() {
 
     # Get current game version
     CURRENT_VERSION=$(timeout 10 "$DOWNLOADER_BIN" "${DOWNLOADER_ARGS[@]}" -print-version -skip-update-check 2>/dev/null \
-        | grep -v -E "Please visit|Path to credentials file|Authorization code:" \
+        | grep -v -i -E "$DOWNLOADER_OUTPUT_FILTER" \
         | head -1)
 
     if [ -z "$CURRENT_VERSION" ]; then
@@ -195,7 +194,7 @@ download_hytale() {
     LOCAL_VERSION=""
     if [ -f "/home/container/.version" ]; then
         # Read only a valid version line, ignore any accidental prompt leftovers
-        LOCAL_VERSION=$(grep -E '^[0-9]{4}\.[0-9]{2}\.[0-9]{2}-[a-f0-9]+' -m1 \
+        LOCAL_VERSION=$(grep -E "$VERSION_PATTERN" -m1 \
             "/home/container/.version" 2>/dev/null)
     fi
 
@@ -204,7 +203,7 @@ download_hytale() {
     # Get remote version without downloading
     msg BLUE "[update 1/3] Fetching remote version..."
     REMOTE_VERSION=$(timeout 10 "$DOWNLOADER_BIN" "${DOWNLOADER_ARGS[@]}" -patchline "$PATCHLINE" -print-version -skip-update-check 2>/dev/null \
-        | grep -v -E "Please visit|Path to credentials file|Authorization code:" \
+        | grep -v -i -E "$DOWNLOADER_OUTPUT_FILTER" \
         | head -1)
 
     if [ -z "$REMOTE_VERSION" ]; then
@@ -235,8 +234,8 @@ download_hytale() {
         return 1
     fi
 
-    # Locate downloaded zip (dynamic name by date/branch)
-    GAME_ZIP=$(find "$DOWNLOAD_DIR" -maxdepth 3 -name "*.zip" -type f | head -n 1)
+    # Locate downloaded zip (should be directly in DOWNLOAD_DIR)
+    GAME_ZIP=$(find "$DOWNLOAD_DIR" -maxdepth 1 -name "*.zip" -type f | head -n 1)
 
     if [ -z "$GAME_ZIP" ] || [ ! -f "$GAME_ZIP" ]; then
         msg RED "Error: No zip file found in download directory"
@@ -317,7 +316,7 @@ manage_psaver() {
         msg BLUE "[plugin] Checking Performance Saver plugin..."
 
         # Check if a jar matching the pattern exists (enabled)
-        EXISTING_JAR=$(find "$PSAVER_PLUGINS_DIR" -maxdepth 1 -type f -name "$PSAVER_JAR_PATTERN" ! -name "*.disabled" 2>/dev/null | head -n 1)
+        EXISTING_JAR=$(find "$PSAVER_PLUGINS_DIR" -maxdepth 1 -type f -name "${PSAVER_JAR_NAME}*.jar" ! -name "*.disabled" 2>/dev/null | head -n 1)
 
         if [ -n "$EXISTING_JAR" ]; then
             msg GREEN "  ✓ Performance Saver already installed and enabled"
@@ -325,7 +324,7 @@ manage_psaver() {
         fi
 
         # Check if a disabled version exists
-        DISABLED_JAR=$(find "$PSAVER_PLUGINS_DIR" -maxdepth 1 -type f -name "${PSAVER_JAR_PATTERN}.disabled" 2>/dev/null | head -n 1)
+        DISABLED_JAR=$(find "$PSAVER_PLUGINS_DIR" -maxdepth 1 -type f -name "${PSAVER_JAR_NAME}*.jar.disabled" 2>/dev/null | head -n 1)
 
         if [ -n "$DISABLED_JAR" ]; then
             msg BLUE "  Re-enabling Performance Saver..."
@@ -341,7 +340,7 @@ manage_psaver() {
         mkdir -p "$TEMP_PSAVER_DIR"
 
         # Get latest release download URL
-        DOWNLOAD_URL=$(wget -q -O - "$PSAVER_RELEASES_URL" 2>/dev/null | sed -n 's/.*"browser_download_url":[[:space:]]*"\([^"]*\.jar\)".*/\1/p' | head -n 1)
+        DOWNLOAD_URL=$(wget -q -O - "$PSAVER_RELEASES_URL" 2>>"$ERROR_LOG" | sed -n 's/.*"browser_download_url":[[:space:]]*"\([^"]*\.jar\)".*/\1/p' | head -n 1)
 
         if [ -z "$DOWNLOAD_URL" ]; then
             msg RED "Error: Could not fetch Performance Saver plugin release"
@@ -352,21 +351,32 @@ manage_psaver() {
         # Extract filename from URL
         PLUGIN_FILENAME=$(basename "$DOWNLOAD_URL")
 
-        if ! wget -O "$TEMP_PSAVER_DIR/$PLUGIN_FILENAME" "$DOWNLOAD_URL" 2>/dev/null; then
+        if ! wget -O "$TEMP_PSAVER_DIR/$PLUGIN_FILENAME" "$DOWNLOAD_URL" --ca-certificate=/etc/ssl/certs/ca-certificates.crt 2>>"$ERROR_LOG"; then
             msg RED "Error: Failed to download Performance Saver plugin"
             rm -rf "$TEMP_PSAVER_DIR"
             return 1
         fi
 
+        # Verify file integrity - ensure it's a valid JAR file
+        if ! file "$TEMP_PSAVER_DIR/$PLUGIN_FILENAME" | grep -q "Java archive"; then
+            msg RED "Error: Downloaded file is not a valid JAR archive"
+            rm -rf "$TEMP_PSAVER_DIR"
+            return 1
+        fi
+
         # Copy to mods directory
-        cp "$TEMP_PSAVER_DIR/$PLUGIN_FILENAME" "$PSAVER_PLUGINS_DIR/"
+        if ! cp "$TEMP_PSAVER_DIR/$PLUGIN_FILENAME" "$PSAVER_PLUGINS_DIR/"; then
+            msg RED "Error: Failed to install Performance Saver plugin (copy failed)"
+            rm -rf "$TEMP_PSAVER_DIR"
+            return 1
+        fi
         rm -rf "$TEMP_PSAVER_DIR"
         msg GREEN "  ✓ Performance Saver plugin installed ($PLUGIN_FILENAME)"
         return 0
 
     else
         # PSAVER=0: Disable the plugin if it exists
-        EXISTING_JAR=$(find "$PSAVER_PLUGINS_DIR" -maxdepth 1 -type f -name "$PSAVER_JAR_PATTERN" ! -name "*.disabled" 2>/dev/null | head -n 1)
+        EXISTING_JAR=$(find "$PSAVER_PLUGINS_DIR" -maxdepth 1 -type f -name "${PSAVER_JAR_NAME}*.jar" ! -name "*.disabled" 2>/dev/null | head -n 1)
 
         if [ -n "$EXISTING_JAR" ]; then
             msg BLUE "[plugin] Disabling Performance Saver..."
@@ -378,7 +388,7 @@ manage_psaver() {
 }
 
 # Manage Performance Saver plugin
-if [ "$PSAVER" = "1" ] || [ -n "$(find "$PSAVER_PLUGINS_DIR" -maxdepth 1 -name "${PSAVER_JAR_PATTERN}*" -type f 2>/dev/null | head -1)" ]; then
+if [ "$PSAVER" = "1" ] || [ -n "$(find "$PSAVER_PLUGINS_DIR" -maxdepth 1 -name "${PSAVER_JAR_NAME}*.jar*" -type f 2>/dev/null | head -1)" ]; then
     manage_psaver || true
 fi
 
