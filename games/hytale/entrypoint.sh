@@ -130,6 +130,25 @@ install_downloader() {
     return 0
 }
 
+# Function to initialize credentials file if needed
+initialize_credentials() {
+    # If credentials file does not exist yet, trigger an initial run without args
+    # so the downloader can guide through device auth and create the file.
+    if [ ! -f "$CREDENTIALS_PATH" ]; then
+        msg BLUE "[auth] Initializing downloader to create credentials (one-time)..."
+        "$DOWNLOADER_BIN" -print-version -skip-update-check 2>&1 | sed "s/.*/  ${CYAN}&${NC}/"
+        if [ -f "$CREDENTIALS_PATH" ]; then
+            msg GREEN "  ✓ Credentials file created"
+            # Add credentials to downloader args if not already present
+            if [[ ! " ${DOWNLOADER_ARGS[*]} " =~ " -credentials-path " ]]; then
+                DOWNLOADER_ARGS+=("-credentials-path" "$CREDENTIALS_PATH")
+            fi
+        else
+            msg YELLOW "  Note: Credentials file not created yet; continuing without it"
+        fi
+    fi
+}
+
 # Check for updates
 check_for_updates() {
     msg BLUE "[update] Checking for Hytale server updates..."
@@ -141,19 +160,8 @@ check_for_updates() {
         fi
     fi
 
-    # If credentials file does not exist yet, trigger an initial run without args
-    # so the downloader can guide through device auth and create the file.
-    if [ ! -f "$CREDENTIALS_PATH" ]; then
-        msg BLUE "[auth] Initializing downloader to create credentials (one-time)..."
-        "$DOWNLOADER_BIN" -print-version -skip-update-check 2>&1 | sed "s/.*/  ${CYAN}&${NC}/"
-        if [ -f "$CREDENTIALS_PATH" ]; then
-            msg GREEN "  ✓ Credentials file created"
-            # Rebuild downloader args now that the file exists
-            DOWNLOADER_ARGS=("-credentials-path" "$CREDENTIALS_PATH")
-        else
-            msg YELLOW "  Note: Credentials file not created yet; continuing without it"
-        fi
-    fi
+    # Initialize credentials if needed
+    initialize_credentials
 
     # Get current game version
     CURRENT_VERSION=$(timeout 10 "$DOWNLOADER_BIN" "${DOWNLOADER_ARGS[@]}" -print-version -skip-update-check 2>/dev/null \
@@ -180,19 +188,8 @@ download_hytale() {
         fi
     fi
 
-    # If credentials file does not exist yet, trigger an initial run without args
-    # so the downloader can guide through device auth and create the file.
-    if [ ! -f "$CREDENTIALS_PATH" ]; then
-        msg BLUE "[auth] Initializing downloader to create credentials (one-time)..."
-        "$DOWNLOADER_BIN" -print-version -skip-update-check 2>&1 | sed "s/.*/  ${CYAN}&${NC}/"
-        if [ -f "$CREDENTIALS_PATH" ]; then
-            msg GREEN "  ✓ Credentials file created"
-            # Rebuild downloader args now that the file exists
-            DOWNLOADER_ARGS=("-credentials-path" "$CREDENTIALS_PATH")
-        else
-            msg YELLOW "  Note: Credentials file not created yet; continuing without it"
-        fi
-    fi
+    # Initialize credentials if needed
+    initialize_credentials
 
     # Check local version
     LOCAL_VERSION=""
@@ -320,7 +317,7 @@ manage_psaver() {
         msg BLUE "[plugin] Checking Performance Saver plugin..."
 
         # Check if a jar matching the pattern exists (enabled)
-        EXISTING_JAR=$(find "$PSAVER_PLUGINS_DIR" -maxdepth 1 -type f -name "*.jar" ! -name "*.disabled" 2>/dev/null | grep -i "performance\|psaver\|nitrado" | head -n 1)
+        EXISTING_JAR=$(find "$PSAVER_PLUGINS_DIR" -maxdepth 1 -type f -name "$PSAVER_JAR_PATTERN" ! -name "*.disabled" 2>/dev/null | head -n 1)
 
         if [ -n "$EXISTING_JAR" ]; then
             msg GREEN "  ✓ Performance Saver already installed and enabled"
@@ -328,7 +325,7 @@ manage_psaver() {
         fi
 
         # Check if a disabled version exists
-        DISABLED_JAR=$(find "$PSAVER_PLUGINS_DIR" -maxdepth 1 -type f -name "*.jar.disabled" 2>/dev/null | grep -i "performance\|psaver\|nitrado" | head -n 1)
+        DISABLED_JAR=$(find "$PSAVER_PLUGINS_DIR" -maxdepth 1 -type f -name "${PSAVER_JAR_PATTERN}.disabled" 2>/dev/null | head -n 1)
 
         if [ -n "$DISABLED_JAR" ]; then
             msg BLUE "  Re-enabling Performance Saver..."
@@ -344,7 +341,7 @@ manage_psaver() {
         mkdir -p "$TEMP_PSAVER_DIR"
 
         # Get latest release download URL
-        DOWNLOAD_URL=$(wget -q -O - "$PSAVER_RELEASES_URL" 2>/dev/null | grep -oP '"browser_download_url":\s*"\K[^"]*\.jar' | head -n 1)
+        DOWNLOAD_URL=$(wget -q -O - "$PSAVER_RELEASES_URL" 2>/dev/null | sed -n 's/.*"browser_download_url":[[:space:]]*"\([^"]*\.jar\)".*/\1/p' | head -n 1)
 
         if [ -z "$DOWNLOAD_URL" ]; then
             msg RED "Error: Could not fetch Performance Saver plugin release"
@@ -369,7 +366,7 @@ manage_psaver() {
 
     else
         # PSAVER=0: Disable the plugin if it exists
-        EXISTING_JAR=$(find "$PSAVER_PLUGINS_DIR" -maxdepth 1 -type f -name "*.jar" ! -name "*.disabled" 2>/dev/null | grep -i "performance\|psaver\|nitrado" | head -n 1)
+        EXISTING_JAR=$(find "$PSAVER_PLUGINS_DIR" -maxdepth 1 -type f -name "$PSAVER_JAR_PATTERN" ! -name "*.disabled" 2>/dev/null | head -n 1)
 
         if [ -n "$EXISTING_JAR" ]; then
             msg BLUE "[plugin] Disabling Performance Saver..."
@@ -381,7 +378,7 @@ manage_psaver() {
 }
 
 # Manage Performance Saver plugin
-if [ "$PSAVER" = "1" ] || [ -n "$(find "$PSAVER_PLUGINS_DIR" -maxdepth 1 -name "*.jar*" -type f 2>/dev/null | head -1)" ]; then
+if [ "$PSAVER" = "1" ] || [ -n "$(find "$PSAVER_PLUGINS_DIR" -maxdepth 1 -name "${PSAVER_JAR_PATTERN}*" -type f 2>/dev/null | head -1)" ]; then
     manage_psaver || true
 fi
 
