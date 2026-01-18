@@ -1,10 +1,6 @@
-#!/bin/bash
-
-# Default the TZ environment variable to UTC.
 TZ=${TZ:-UTC}
 export TZ
 
-# Simple colors via tput (fallback to no color if unavailable)
 RED=$(tput setaf 1 2>/dev/null || echo '')
 GREEN=$(tput setaf 2 2>/dev/null || echo '')
 YELLOW=$(tput setaf 3 2>/dev/null || echo '')
@@ -15,11 +11,9 @@ NC=$(tput sgr0 2>/dev/null || echo '')
 ERROR_LOG="/home/container/install_error.log"
 AUTH_LOG="/home/container/.hytale-auth.log"
 
-# Message helpers
 msg() {
     local color="$1"
     shift
-    # If RED, also write the message to install_error.log
     if [ "$color" = "RED" ]; then
         printf "%b\n" "${RED}$*${NC}" | tee -a "$ERROR_LOG" >&2
     else
@@ -44,18 +38,13 @@ auth_log() {
     printf "[%s] [%s] %s\n" "$timestamp" "$level" "$*" >> "$AUTH_LOG"
 }
 
-# Set environment variable that holds the Internal Docker IP
 INTERNAL_IP=$(ip route get 1 | awk '{print $(NF-2);exit}')
 export INTERNAL_IP
 
-# Switch to the container's working directory
 cd /home/container || exit 1
 
-# Refresh temporary directory to avoid stale downloads between restarts
 rm -rf /home/container/.tmp
 mkdir -p /home/container/.tmp
-
-# Hytale Downloader Configuration
 DOWNLOADER_URL="https://downloader.hytale.com/hytale-downloader.zip"
 DOWNLOADER_BIN="${DOWNLOADER_BIN:-/home/container/hytale-downloader}"
 AUTO_UPDATE=${AUTO_UPDATE:-0}
@@ -63,7 +52,6 @@ PATCHLINE=${PATCHLINE:-release}
 CREDENTIALS_PATH="${CREDENTIALS_PATH:-/home/container/.hytale-downloader-credentials.json}"
 DOWNLOADER_ARGS=()
 
-# API Authentication (Device Code Flow) configuration
 HYTALE_API_AUTH=${HYTALE_API_AUTH:-1}
 HYTALE_PROFILE_UUID=${HYTALE_PROFILE_UUID:-}
 HYTALE_AUTH_STATE_PATH="${HYTALE_AUTH_STATE_PATH:-/home/container/.hytale-auth.json}"
@@ -79,17 +67,14 @@ HYTALE_TOKEN_EXPIRY_BUFFER=300
 HYTALE_ACCESS_EXPIRES=0
 HYTALE_SESSION_EXPIRES=0
 
-# Plugin Configuration
 PSAVER=${PSAVER:-0}
 PSAVER_RELEASES_URL="https://api.github.com/repos/nitrado/hytale-plugin-performance-saver/releases/latest"
 PSAVER_PLUGINS_DIR="/home/container/mods"
 PSAVER_JAR_NAME="Nitrado_PerformanceSaver"
 
-# Version and filter patterns
 VERSION_PATTERN='^[0-9]{4}\.[0-9]{2}\.[0-9]{2}-[a-f0-9]+'
 DOWNLOADER_OUTPUT_FILTER="Please visit|Path to credentials file|Authorization code:"
 
-# Cleanup invalid version file (e.g., if it contains auth prompts)
 if [ -f "/home/container/.version" ]; then
     if ! grep -qE "$VERSION_PATTERN" "/home/container/.version"; then
         msg YELLOW "Warning: Invalid .version content detected; removing file"
@@ -97,14 +82,12 @@ if [ -f "/home/container/.version" ]; then
     fi
 fi
 
-# Java version
 line "CYAN"
 msg BLUE "System Information"
 line "CYAN"
 msg CYAN "Runtime Information:"
 java -version 2>&1 | sed "s/^/  /"
 
-# Detect CPU architecture
 ARCH=$(uname -m)
 case "$ARCH" in
     x86_64)
@@ -119,7 +102,6 @@ case "$ARCH" in
 esac
 msg CYAN "System Architecture: $ARCH_DISPLAY"
 
-# Function to install Hytale Downloader
 install_downloader() {
     msg YELLOW "[installer] Downloader not found, installing..."
 
@@ -155,7 +137,6 @@ install_downloader() {
     return 0
 }
 
-# Helper function for time formatting (must be defined early for validation functions)
 format_expiry() {
     local ts="$1"
     [ -z "$ts" ] || [ "$ts" -le 0 ] 2>/dev/null && echo "unknown" && return
@@ -173,7 +154,6 @@ format_expiry() {
     printf "%dh %dm %ds (until %s)" "$h" "$m" "$s" "$abs"
 }
 
-# Function to validate downloader credentials expiry (must be defined before initialize_credentials)
 validate_downloader_credentials() {
     if [ ! -f "$CREDENTIALS_PATH" ]; then
         return 1
@@ -202,7 +182,6 @@ validate_downloader_credentials() {
     fi
 }
 
-# Function to initialize credentials file if needed
 initialize_credentials() {
     if [ ! -f "$CREDENTIALS_PATH" ]; then
         msg BLUE "[auth] Initializing downloader to create credentials (one-time)..."
@@ -218,7 +197,6 @@ initialize_credentials() {
     fi
 }
 
-# Check for downloader updates first thing
 line "BLUE"
 msg  BLUE "Downloader Update Check"
 line "BLUE"
@@ -228,14 +206,12 @@ if [ -f "$DOWNLOADER_BIN" ]; then
         if [ -f "$CREDENTIALS_PATH" ]; then
             msg GREEN "  ✓ Valid downloader auth file found"
         fi
-        # Validate credentials and show expiry
         validate_downloader_credentials || true
     else
         msg YELLOW "  Note: Downloader update check completed"
     fi
 fi
 
-# Check for updates
 check_for_updates() {
     msg BLUE "[update] Checking for Hytale server updates..."
 
@@ -248,13 +224,9 @@ check_for_updates() {
 
     initialize_credentials
 
-    # Get current game version
     DOWNLOADER_OUTPUT=$(timeout 10 "$DOWNLOADER_BIN" "${DOWNLOADER_ARGS[@]}" -print-version -skip-update-check 2>&1)
 
-    # Extract version line, but show full output for debugging
     CURRENT_VERSION=$(echo "$DOWNLOADER_OUTPUT" | grep -E "$VERSION_PATTERN" | head -1)
-
-    # If no version found, show the output to help diagnose issues
     if [ -z "$CURRENT_VERSION" ]; then
         msg YELLOW "Warning: Could not determine game version"
         echo "$DOWNLOADER_OUTPUT" | sed "s/.*/  ${CYAN}&${NC}/"
@@ -265,7 +237,6 @@ check_for_updates() {
     return 0
 }
 
-# Function to download and update Hytale
 download_hytale() {
     msg BLUE "[update] Checking for Hytale updates..."
 
@@ -278,24 +249,18 @@ download_hytale() {
 
     initialize_credentials
 
-    # Check local version
     LOCAL_VERSION=""
     if [ -f "/home/container/.version" ]; then
-        # Read only a valid version line, ignore any accidental prompt leftovers
         LOCAL_VERSION=$(grep -E "$VERSION_PATTERN" -m1 \
             "/home/container/.version" 2>/dev/null)
     fi
 
     msg CYAN "  Local version: ${LOCAL_VERSION:-none installed}"
 
-    # Get remote version without downloading
     msg BLUE "[update 1/3] Fetching remote version..."
     DOWNLOADER_OUTPUT=$(timeout 10 "$DOWNLOADER_BIN" "${DOWNLOADER_ARGS[@]}" -patchline "$PATCHLINE" -print-version -skip-update-check 2>&1)
 
-    # Extract version line, but show full output for debugging
     REMOTE_VERSION=$(echo "$DOWNLOADER_OUTPUT" | grep -E "$VERSION_PATTERN" | head -1)
-
-    # If no version found, show the output to help diagnose issues
     if [ -z "$REMOTE_VERSION" ]; then
         msg RED "Error: Could not determine remote version"
         echo "$DOWNLOADER_OUTPUT" | sed "s/.*/  ${CYAN}&${NC}/"
@@ -311,8 +276,6 @@ download_hytale() {
 
     msg BLUE "[update 2/3] Downloading Hytale build..."
 
-    # Create temporary directory for download
-    # Create temporary directory for download
     DOWNLOAD_DIR="/home/container/.tmp/hytale-download"
     rm -rf "$DOWNLOAD_DIR"
     mkdir -p "$DOWNLOAD_DIR"
@@ -362,7 +325,6 @@ download_hytale() {
     return 0
 }
 
-# Check for game files and handle AUTO_UPDATE
 line "BLUE"
 msg BLUE "Hytale Gamefiles Update Check"
 line "BLUE"
@@ -373,15 +335,12 @@ if [ "$AUTO_UPDATE" = "1" ]; then
         exit 1
     fi
 else
-    # Check for existing game files
     if [ ! -f "/home/container/HytaleServer.jar" ] && [ ! -d "/home/container/Server" ]; then
         msg YELLOW "No Hytale server files found"
         msg CYAN "Set AUTO_UPDATE=1 to automatically download files"
 
-        # Try to check for updates anyway
         check_for_updates || true
     else
-        # Check for updates in background when server exists
         check_for_updates || true
     fi
 fi
@@ -455,7 +414,6 @@ manage_psaver() {
     fi
 }
 
-# Manage Performance Saver plugin
 line "BLUE"
 msg BLUE "Plugin Installation"
 line "BLUE"
@@ -603,7 +561,6 @@ fetch_profile_uuid() {
         return 1
     fi
 
-    # Debug: Show full profiles response for license check
     auth_log "INFO" "Profiles response: $profiles_resp"
 
     if [ -n "$HYTALE_PROFILE_UUID" ]; then
@@ -791,7 +748,6 @@ run_hytale_api_auth() {
     export HYTALE_SESSION_EXPIRES
     export HYTALE_PROFILE_UUID
 
-    # Also set server-expected env names
     export HYTALE_SERVER_SESSION_TOKEN="$HYTALE_SESSION_TOKEN"
     export HYTALE_SERVER_IDENTITY_TOKEN="$HYTALE_IDENTITY_TOKEN"
 
@@ -807,18 +763,12 @@ run_hytale_api_auth() {
     return 0
 }
 
-# Acquire Hytale API tokens (device flow) and export to env if enabled
 if ! run_hytale_api_auth; then
     msg YELLOW "[auth] Continuing without API-acquired tokens"
 fi
 
-# Convert all of the "{{VARIABLE}}" parts of the command into the expected shell
-# variable format of "${VARIABLE}" before evaluating the string and automatically
-# replacing the values.
 PARSED=$(echo "${STARTUP}" | sed -e 's/{{/${/g' -e 's/}}/}/g' | eval echo "$(cat -)")
 
-# Display the command we're running in the output, and then execute it with eval
 printf "\033[1m\033[33mcontainer~ \033[0m"
 echo "$PARSED"
-# shellcheck disable=SC2086
 exec env ${PARSED}
