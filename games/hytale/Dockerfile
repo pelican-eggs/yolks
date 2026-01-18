@@ -1,9 +1,8 @@
 FROM        --platform=$TARGETOS/$TARGETARCH eclipse-temurin:25-jdk-noble
 
-LABEL       author="Michael Parker" maintainer="parker@pelican.dev"
-LABEL       author="gOOvER" maintainer="eggs@goover.dev"
-LABEL       org.opencontainers.image.source="https://github.com/pelican-eggs/yolks"
-LABEL       org.opencontainers.image.licenses=MIT
+LABEL       org.opencontainers.image.authors="Michael Parker <parker@pelican.dev>, gOOvER <eggs@goover.dev>" \
+            org.opencontainers.image.source="https://github.com/pelican-eggs/yolks" \
+            org.opencontainers.image.licenses=MIT
 
 RUN         apt update -y \
             && apt install -y \
