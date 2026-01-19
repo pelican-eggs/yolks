@@ -75,6 +75,9 @@ PSAVER_JAR_NAME="Nitrado_PerformanceSaver"
 VERSION_PATTERN='^[0-9]{4}\.[0-9]{2}\.[0-9]{2}-[a-f0-9]+'
 DOWNLOADER_OUTPUT_FILTER="Please visit|Path to credentials file|Authorization code:"
 
+# Cleanup invalid version file (e.g., if it contains auth prompts)
+# Expected format: YYYY.MM.DD-<hex>. The hash suffix is intentionally
+# allowed to be variable-length, as long as it is non-empty hexadecimal.
 if [ -f "/home/container/.version" ]; then
     if ! grep -qE "$VERSION_PATTERN" "/home/container/.version"; then
         msg YELLOW "Warning: Invalid .version content detected; removing file"
@@ -371,7 +374,7 @@ manage_psaver() {
         rm -rf "$TEMP_PSAVER_DIR"
         mkdir -p "$TEMP_PSAVER_DIR"
 
-        DOWNLOAD_URL=$(wget -q -O - "$PSAVER_RELEASES_URL" 2>/dev/null | sed -n 's/.*"browser_download_url":[[:space:]]*"\([^"]*\.jar\)".*/\1/p' | head -n 1)
+        DOWNLOAD_URL=$(wget -q -O - "$PSAVER_RELEASES_URL" 2>/dev/null | jq -r '.assets[].browser_download_url | select(endswith(".jar"))' | head -n 1)
 
         if [ -z "$DOWNLOAD_URL" ]; then
             msg RED "Error: Could not fetch Performance Saver plugin release"
@@ -417,7 +420,7 @@ manage_psaver() {
 line "BLUE"
 msg BLUE "Plugin Installation"
 line "BLUE"
-if [ "$PSAVER" = "1" ] || [ -n "$(find "$PSAVER_PLUGINS_DIR" -maxdepth 1 -name "${PSAVER_JAR_NAME}*.jar*" -type f 2>/dev/null | head -1)" ]; then
+if [ "$PSAVER" = "1" ] || [ -n "$(find "$PSAVER_PLUGINS_DIR" -maxdepth 1 -type f -name "${PSAVER_JAR_NAME}*.jar" ! -name "*.disabled" 2>/dev/null | head -n 1)" ]; then
     manage_psaver || true
 fi
 
