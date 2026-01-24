@@ -186,9 +186,12 @@ if [ -f "$DOWNLOADER_BIN" ]; then
     msg BLUE "[startup] Checking for downloader updates..."
 
     DOWNLOADER_CHECK_OUTPUT=$("$DOWNLOADER_BIN" "${DOWNLOADER_ARGS[@]}" -check-update 2>&1)
+    DOWNLOADER_CHECK_EXIT_CODE=$?
     echo "$DOWNLOADER_CHECK_OUTPUT" | sed "s/.*/  ${CYAN}&${NC}/"
 
-    if echo "$DOWNLOADER_CHECK_OUTPUT" | grep -q "A new version is available"; then
+    if [ $DOWNLOADER_CHECK_EXIT_CODE -ne 0 ]; then
+        msg YELLOW "[startup] Warning: Downloader check command failed with exit code $DOWNLOADER_CHECK_EXIT_CODE"
+    elif echo "$DOWNLOADER_CHECK_OUTPUT" | grep -q "A new version is available"; then
         msg YELLOW "[startup] Downloader update available, downloading..."
         if ! install_downloader; then
             msg RED "Error: Failed to update Hytale Downloader"
