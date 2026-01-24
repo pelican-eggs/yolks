@@ -12,7 +12,6 @@ CYAN=$(tput setaf 6 2>/dev/null || echo '')
 NC=$(tput sgr0 2>/dev/null || echo '')
 
 ERROR_LOG="/home/container/install_error.log"
-AUTH_LOG="/home/container/.hytale-auth.log"
 
 msg() {
     local color="$1"
@@ -33,14 +32,6 @@ line() {
     msg "$color" "$sep"
 }
 
-auth_log() {
-    local level="$1"
-    shift
-    local timestamp
-    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    printf "[%s] [%s] %s\n" "$timestamp" "$level" "$*" >> "$AUTH_LOG"
-}
-
 INTERNAL_IP=$(ip route get 1 | awk '{print $(NF-2);exit}')
 export INTERNAL_IP
 
@@ -54,21 +45,7 @@ AUTO_UPDATE=${AUTO_UPDATE:-0}
 PATCHLINE=${PATCHLINE:-release}
 CREDENTIALS_PATH="${CREDENTIALS_PATH:-/home/container/.hytale-downloader-credentials.json}"
 DOWNLOADER_ARGS=()
-
-HYTALE_API_AUTH=${HYTALE_API_AUTH:-1}
-HYTALE_PROFILE_UUID=${HYTALE_PROFILE_UUID:-}
-HYTALE_AUTH_STATE_PATH="${HYTALE_AUTH_STATE_PATH:-/home/container/.hytale-auth.json}"
-HYTALE_OAUTH_CLIENT_ID="hytale-server"
-HYTALE_OAUTH_SCOPE="openid offline auth:server"
-HYTALE_DEVICE_AUTH_URL="https://oauth.accounts.hytale.com/oauth2/device/auth"
-HYTALE_TOKEN_URL="https://oauth.accounts.hytale.com/oauth2/token"
-HYTALE_PROFILES_URL="https://account-data.hytale.com/my-account/get-profiles"
-HYTALE_SESSION_URL="https://sessions.hytale.com/game-session/new"
-HYTALE_SESSION_REFRESH_URL="https://sessions.hytale.com/game-session/refresh"
-HYTALE_DEVICE_POLL_INTERVAL=5
-HYTALE_TOKEN_EXPIRY_BUFFER=300
-HYTALE_ACCESS_EXPIRES=0
-HYTALE_SESSION_EXPIRES=0
+DOWNLOADER_ARGS+=("-credentials-path" "$CREDENTIALS_PATH")
 
 PSAVER=${PSAVER:-0}
 PSAVER_RELEASES_URL="https://api.github.com/repos/nitrado/hytale-plugin-performance-saver/releases/latest"
@@ -129,8 +106,8 @@ install_downloader() {
         return 1
     fi
 
-    if [ -f "$TEMP_DIR/hytale-downloader" ]; then
-        cp "$TEMP_DIR/hytale-downloader" "$DOWNLOADER_BIN"
+    if [ -f "$TEMP_DIR/hytale-downloader-linux-amd64" ]; then
+        cp "$TEMP_DIR/hytale-downloader-linux-amd64" "$DOWNLOADER_BIN"
         chmod +x "$DOWNLOADER_BIN"
         msg GREEN "✓ Hytale Downloader installed successfully"
     else
@@ -156,7 +133,7 @@ format_expiry() {
     m=$((diff / 60 % 60))
     s=$((diff % 60))
     local abs
-    abs=$(date -u -d @"$ts" +"%Y-%m-%d %H:%M:%SZ" 2>/dev/null || echo "$ts")
+    abs=$(date -d @"$ts" +"%Y-%m-%d %H:%M:%S %Z" 2>/dev/null || echo "$ts")
     printf "%dh %dm %ds (until %s)" "$h" "$m" "$s" "$abs"
 }
 
@@ -179,11 +156,10 @@ validate_downloader_credentials() {
         local remaining
         remaining=$(format_expiry "$expires_at")
         msg GREEN "  ✓ Credentials valid - expires: $remaining"
-        auth_log "INFO" "Downloader credentials valid - expires at $(date -u -d @"$expires_at" +"%Y-%m-%d %H:%M:%SZ" 2>/dev/null || echo "$expires_at")"
         return 0
     else
-        msg YELLOW "  ⚠ Credentials expired, will be regenerated on next use"
-        auth_log "WARN" "Downloader credentials expired at $(date -u -d @"$expires_at" +"%Y-%m-%d %H:%M:%SZ" 2>/dev/null || echo "$expires_at")"
+        msg YELLOW "  Downloader credentials expired; removing to force re-auth"
+        rm -f "$CREDENTIALS_PATH" 2>/dev/null || true
         return 1
     fi
 }
@@ -208,14 +184,28 @@ msg  BLUE "Downloader Update Check"
 line "BLUE"
 if [ -f "$DOWNLOADER_BIN" ]; then
     msg BLUE "[startup] Checking for downloader updates..."
-    if "$DOWNLOADER_BIN" "${DOWNLOADER_ARGS[@]}" -check-update 2>&1 | sed "s/.*/  ${CYAN}&${NC}/"; then
-        if [ -f "$CREDENTIALS_PATH" ]; then
-            msg GREEN "  ✓ Valid downloader auth file found"
+
+    DOWNLOADER_CHECK_OUTPUT=$("$DOWNLOADER_BIN" "${DOWNLOADER_ARGS[@]}" -check-update 2>&1)
+    DOWNLOADER_CHECK_EXIT_CODE=$?
+    echo "$DOWNLOADER_CHECK_OUTPUT" | sed "s/.*/  ${CYAN}&${NC}/"
+
+    if [ $DOWNLOADER_CHECK_EXIT_CODE -ne 0 ]; then
+        msg YELLOW "[startup] Warning: Downloader check command failed with exit code $DOWNLOADER_CHECK_EXIT_CODE"
+    elif echo "$DOWNLOADER_CHECK_OUTPUT" | grep -q "A new version is available"; then
+        msg YELLOW "[startup] Downloader update available, downloading..."
+        if ! install_downloader; then
+            msg RED "Error: Failed to update Hytale Downloader"
+        else
+            msg GREEN "✓ Hytale Downloader updated successfully"
         fi
-        validate_downloader_credentials || true
     else
-        msg YELLOW "  Note: Downloader update check completed"
+        msg GREEN "  ✓ Downloader is up to date"
     fi
+
+    if [ -f "$CREDENTIALS_PATH" ]; then
+        msg GREEN "  ✓ Valid downloader auth file found"
+    fi
+    validate_downloader_credentials || true
 fi
 
 check_for_updates() {
@@ -457,350 +447,13 @@ if [ "$PSAVER" = "1" ] || [ -n "$(find "$PSAVER_PLUGINS_DIR" -maxdepth 1 -type f
 fi
 
 line "BLUE"
-msg BLUE "OAuth & Session Setup"
+msg BLUE "Server Authentication Info"
 line "BLUE"
-
-json_field_string() {
-    local key="$1"
-    sed -n 's/.*"'"${key}"'"[[:space:]]*:[[:space:]]*"\([^"\r\n]*\)".*/\1/p' | head -n1
-}
-
-json_field_number() {
-    local key="$1"
-    sed -n 's/.*"'"${key}"'"[[:space:]]*:[[:space:]]*\([0-9]\+\).*/\1/p' | head -n1
-}
-
-json_first_uuid() {
-    sed -n 's/.*"uuid"[[:space:]]*:[[:space:]]*"\([0-9a-fA-F-]\+\)".*/\1/p' | head -n1
-}
-
-iso_to_epoch() {
-    local iso="$1"
-    [ -z "$iso" ] && echo 0 && return
-    date -d "$iso" +%s 2>/dev/null || echo 0
-}
-
-load_auth_state() {
-    [ -f "$HYTALE_AUTH_STATE_PATH" ] && . "$HYTALE_AUTH_STATE_PATH"
-}
-
-write_auth_state() {
-    cat > "$HYTALE_AUTH_STATE_PATH" <<EOF
-HYTALE_REFRESH_TOKEN="${HYTALE_REFRESH_TOKEN:-}"
-HYTALE_ACCESS_TOKEN="${HYTALE_ACCESS_TOKEN:-}"
-HYTALE_ACCESS_EXPIRES=${HYTALE_ACCESS_EXPIRES:-0}
-HYTALE_PROFILE_UUID="${HYTALE_PROFILE_UUID:-}"
-HYTALE_SESSION_TOKEN="${HYTALE_SESSION_TOKEN:-}"
-HYTALE_IDENTITY_TOKEN="${HYTALE_IDENTITY_TOKEN:-}"
-HYTALE_SESSION_EXPIRES=${HYTALE_SESSION_EXPIRES:-0}
-EOF
-}
-
-request_device_code() {
-    local resp
-    resp=$(curl -s -X POST "$HYTALE_DEVICE_AUTH_URL" \
-        -H "Content-Type: application/x-www-form-urlencoded" \
-        -d "client_id=$HYTALE_OAUTH_CLIENT_ID" \
-        -d "scope=$HYTALE_OAUTH_SCOPE")
-
-    DEVICE_CODE=$(printf '%s' "$resp" | json_field_string "device_code")
-    USER_CODE=$(printf '%s' "$resp" | json_field_string "user_code")
-    VERIFY_URL=$(printf '%s' "$resp" | json_field_string "verification_uri_complete")
-    POLL_INTERVAL=$(printf '%s' "$resp" | json_field_number "interval")
-    if [ -z "$POLL_INTERVAL" ]; then
-        POLL_INTERVAL=$HYTALE_DEVICE_POLL_INTERVAL
-    fi
-
-    if [ -z "$DEVICE_CODE" ] || [ -z "$USER_CODE" ] || [ -z "$VERIFY_URL" ]; then
-        msg RED "[auth] Failed to request device code"
-        auth_log "ERROR" "Failed to request device code"
-        return 1
-    fi
-    auth_log "INFO" "Device code requested successfully"
-    msg CYAN "  Visit: $VERIFY_URL"
-    msg CYAN "  Code : $USER_CODE"
-    return 0
-}
-
-poll_for_tokens() {
-    local poll_resp
-    while true; do
-        poll_resp=$(curl -s -X POST "$HYTALE_TOKEN_URL" \
-            -H "Content-Type: application/x-www-form-urlencoded" \
-            -d "client_id=$HYTALE_OAUTH_CLIENT_ID" \
-            -d "grant_type=urn:ietf:params:oauth:grant-type:device_code" \
-            -d "device_code=$DEVICE_CODE")
-
-        local error
-        error=$(printf '%s' "$poll_resp" | json_field_string "error")
-        if [ -n "$error" ]; then
-            if [ "$error" = "authorization_pending" ]; then
-                sleep "$POLL_INTERVAL"
-                continue
-            fi
-            if [ "$error" = "slow_down" ]; then
-                sleep $((POLL_INTERVAL + 5))
-                continue
-            fi
-            msg RED "[auth] Token polling failed: $error"
-            return 1
-        fi
-
-        HYTALE_ACCESS_TOKEN=$(printf '%s' "$poll_resp" | json_field_string "access_token")
-        HYTALE_REFRESH_TOKEN=$(printf '%s' "$poll_resp" | json_field_string "refresh_token")
-        local expires_in
-        expires_in=$(printf '%s' "$poll_resp" | json_field_number "expires_in")
-        local now
-        now=$(date +%s)
-        HYTALE_ACCESS_EXPIRES=$((now + expires_in))
-        auth_log "INFO" "Tokens acquired via device code flow"
-        return 0
-    done
-}
-
-refresh_access_token() {
-    local resp
-    resp=$(curl -s -X POST "$HYTALE_TOKEN_URL" \
-        -H "Content-Type: application/x-www-form-urlencoded" \
-        -d "client_id=$HYTALE_OAUTH_CLIENT_ID" \
-        -d "grant_type=refresh_token" \
-        -d "refresh_token=$HYTALE_REFRESH_TOKEN")
-
-    local new_access
-    new_access=$(printf '%s' "$resp" | json_field_string "access_token")
-    if [ -z "$new_access" ]; then
-        msg RED "[auth] Failed to refresh OAuth token"
-        auth_log "ERROR" "Failed to refresh OAuth token"
-        return 1
-    fi
-
-    HYTALE_ACCESS_TOKEN="$new_access"
-    HYTALE_REFRESH_TOKEN=$(printf '%s' "$resp" | json_field_string "refresh_token")
-    local expires_in now
-    expires_in=$(printf '%s' "$resp" | json_field_number "expires_in")
-    now=$(date +%s)
-    HYTALE_ACCESS_EXPIRES=$((now + expires_in))
-    msg GREEN "[auth] OAuth token refreshed"
-    auth_log "INFO" "OAuth token refreshed"
-    return 0
-}
-
-fetch_profile_uuid() {
-    local profiles_resp
-    profiles_resp=$(curl -s -X GET "$HYTALE_PROFILES_URL" \
-        -H "Authorization: Bearer $HYTALE_ACCESS_TOKEN")
-
-    if [ -z "$profiles_resp" ]; then
-        msg RED "[auth] Failed to fetch profiles"
-        auth_log "ERROR" "Failed to fetch profiles"
-        return 1
-    fi
-
-    auth_log "INFO" "Profiles response: $profiles_resp"
-
-    if [ -n "$HYTALE_PROFILE_UUID" ]; then
-        auth_log "INFO" "Using pre-configured profile UUID"
-        return 0
-    fi
-
-    auth_log "DEBUG" "Profiles API response: $profiles_resp"
-
-    HYTALE_PROFILE_UUID=$(printf '%s' "$profiles_resp" | json_first_uuid)
-
-    if [ -z "$HYTALE_PROFILE_UUID" ]; then
-        msg RED "[auth] No profile UUID found"
-        auth_log "ERROR" "No profile UUID found in profiles response"
-        return 1
-    fi
-
-    auth_log "INFO" "Profile UUID fetched: $HYTALE_PROFILE_UUID"
-    return 0
-}
-
-create_game_session() {
-    local session_resp
-    session_resp=$(curl -s -X POST "$HYTALE_SESSION_URL" \
-        -H "Authorization: Bearer $HYTALE_ACCESS_TOKEN" \
-        -H "Content-Type: application/json" \
-        -d '{"uuid":"'"$HYTALE_PROFILE_UUID"'"}')
-
-    if [ -z "$session_resp" ]; then
-        msg RED "[auth] Failed to create game session - empty response"
-        auth_log "ERROR" "Failed to create game session - empty response"
-        return 1
-    fi
-
-    auth_log "DEBUG" "Session API response: $session_resp"
-
-    HYTALE_SESSION_TOKEN=$(printf '%s' "$session_resp" | json_field_string "sessionToken")
-    HYTALE_IDENTITY_TOKEN=$(printf '%s' "$session_resp" | json_field_string "identityToken")
-
-    if [ -z "$HYTALE_SESSION_TOKEN" ] || [ -z "$HYTALE_IDENTITY_TOKEN" ]; then
-        msg RED "[auth] Failed to create game session"
-        auth_log "ERROR" "Failed to create game session"
-        return 1
-    fi
-
-    local expires_at
-    expires_at=$(printf '%s' "$session_resp" | json_field_string "expiresAt")
-    if [ -n "$expires_at" ]; then
-        HYTALE_SESSION_EXPIRES=$(iso_to_epoch "$expires_at")
-        msg GREEN "[auth] Game session created (expires at $expires_at)"
-        auth_log "INFO" "Game session created (expires at $expires_at)"
-    else
-        msg GREEN "[auth] Game session created"
-        auth_log "INFO" "Game session created successfully"
-        HYTALE_SESSION_EXPIRES=$(($(date +%s) + 3600))
-    fi
-    return 0
-
-}
-
-
-refresh_game_session() {
-    if [ -z "$HYTALE_SESSION_TOKEN" ]; then
-        return 1
-    fi
-
-    local resp
-    resp=$(curl -s -X POST "$HYTALE_SESSION_REFRESH_URL" \
-        -H "Authorization: Bearer $HYTALE_SESSION_TOKEN")
-
-    if [ -z "$resp" ]; then
-        msg RED "[auth] Failed to refresh game session - empty response"
-        auth_log "ERROR" "Failed to refresh game session - empty response"
-        return 1
-    fi
-
-    auth_log "DEBUG" "Refresh Session API response: $resp"
-
-    local new_session
-    new_session=$(printf '%s' "$resp" | json_field_string "sessionToken")
-    if [ -n "$new_session" ]; then
-        HYTALE_SESSION_TOKEN="$new_session"
-    fi
-    local new_identity
-    new_identity=$(printf '%s' "$resp" | json_field_string "identityToken")
-    if [ -n "$new_identity" ]; then
-        HYTALE_IDENTITY_TOKEN="$new_identity"
-    fi
-
-    if [ -z "$HYTALE_SESSION_TOKEN" ] || [ -z "$HYTALE_IDENTITY_TOKEN" ]; then
-        msg RED "[auth] Failed to refresh game session"
-        auth_log "ERROR" "Failed to refresh game session"
-        return 1
-    fi
-
-    local expires_at
-    expires_at=$(printf '%s' "$resp" | json_field_string "expiresAt")
-    if [ -n "$expires_at" ]; then
-        HYTALE_SESSION_EXPIRES=$(iso_to_epoch "$expires_at")
-        msg GREEN "[auth] Game session refreshed (expires at $expires_at)"
-        auth_log "INFO" "Game session refreshed (expires at $expires_at)"
-    else
-        msg GREEN "[auth] Game session refreshed"
-        auth_log "INFO" "Game session refreshed successfully"
-        HYTALE_SESSION_EXPIRES=$(($(date +%s) + 3600))
-    fi
-    return 0
-}
-
-ensure_oauth_tokens() {
-    local now
-    now=$(date +%s)
-
-    if [ -n "$HYTALE_ACCESS_TOKEN" ] && [ -n "$HYTALE_ACCESS_EXPIRES" ] && [ $((HYTALE_ACCESS_EXPIRES - HYTALE_TOKEN_EXPIRY_BUFFER)) -gt "$now" ]; then
-        return 0
-    fi
-
-    if [ -n "$HYTALE_REFRESH_TOKEN" ]; then
-        if refresh_access_token; then
-            return 0
-        fi
-        msg YELLOW "[auth] Refresh token invalid, starting new device flow"
-    fi
-
-    if ! request_device_code; then
-        return 1
-    fi
-    if ! poll_for_tokens; then
-        return 1
-    fi
-    return 0
-}
-
-ensure_session_tokens() {
-    local now
-    now=$(date +%s)
-
-    if [ -n "$HYTALE_SESSION_TOKEN" ] && [ -n "$HYTALE_SESSION_EXPIRES" ] && [ $((HYTALE_SESSION_EXPIRES - HYTALE_TOKEN_EXPIRY_BUFFER)) -gt "$now" ]; then
-        return 0
-    fi
-
-    if [ -n "$HYTALE_SESSION_TOKEN" ] && [ $((HYTALE_SESSION_EXPIRES - HYTALE_TOKEN_EXPIRY_BUFFER)) -le "$now" ]; then
-        if refresh_game_session; then
-            return 0
-        fi
-        msg YELLOW "[auth] Session refresh failed, creating new session"
-    fi
-
-    if ! fetch_profile_uuid; then
-        return 1
-    fi
-
-    if ! create_game_session; then
-        return 1
-    fi
-
-    return 0
-}
-
-run_hytale_api_auth() {
-    [ "$HYTALE_API_AUTH" != "1" ] && return 0
-
-    msg BLUE "[auth] Hytale API authentication enabled"
-    auth_log "INFO" "Starting Hytale API authentication"
-
-    load_auth_state
-
-    if ! ensure_oauth_tokens; then
-        msg RED "[auth] OAuth acquisition failed"
-        auth_log "ERROR" "OAuth acquisition failed"
-        return 1
-    fi
-
-    if ! ensure_session_tokens; then
-        msg RED "[auth] Session acquisition failed"
-        auth_log "ERROR" "Session acquisition failed"
-        return 1
-    fi
-
-    export HYTALE_REFRESH_TOKEN
-    export HYTALE_ACCESS_TOKEN
-    export HYTALE_ACCESS_EXPIRES
-    export HYTALE_SESSION_TOKEN
-    export HYTALE_IDENTITY_TOKEN
-    export HYTALE_SESSION_EXPIRES
-    export HYTALE_PROFILE_UUID
-
-    export HYTALE_SERVER_SESSION_TOKEN="$HYTALE_SESSION_TOKEN"
-    export HYTALE_SERVER_IDENTITY_TOKEN="$HYTALE_IDENTITY_TOKEN"
-
-    write_auth_state
-
-    msg GREEN "[auth] Tokens ready and exported"
-    msg CYAN "  Access token valid: $(format_expiry "$HYTALE_ACCESS_EXPIRES")"
-    msg CYAN "  Session token valid: $(format_expiry "$HYTALE_SESSION_EXPIRES")"
-    auth_log "INFO" "Authentication successful - tokens exported"
-
-    msg BLUE "Server Ready for Startup"
-    line "CYAN"
-    return 0
-}
-
-if ! run_hytale_api_auth; then
-    msg YELLOW "[auth] Continuing without API-acquired tokens"
-fi
+msg CYAN "Authentication will be handled by the server itself on first launch."
+msg CYAN "After the server has started, join it with your game client and run this in-game chat command as a player: /auth login device"
+msg CYAN "Then follow the instructions shown in-game to visit: https://accounts.hytale.com/device"
+msg CYAN "and enter the code displayed by the server to complete authentication."
+line "CYAN"
 
 PARSED=$(echo "${STARTUP}" | sed -e 's/{{/${/g' -e 's/}}/}/g' | eval echo "$(cat -)")
 
