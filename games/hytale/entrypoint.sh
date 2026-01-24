@@ -447,9 +447,9 @@ line "BLUE"
 msg BLUE "Server Authentication Info"
 line "BLUE"
 msg CYAN "Authentication will be handled by the server itself on first launch."
-msg CYAN "Use the in-game command: /auth login device"
-msg CYAN "Then follow the instructions to visit: https://accounts.hytale.com/device"
-msg CYAN "and enter the code displayed by the server."
+msg CYAN "After the server has started, join it with your game client and run this in-game chat command as a player: /auth login device"
+msg CYAN "Then follow the instructions shown in-game to visit: https://accounts.hytale.com/device"
+msg CYAN "and enter the code displayed by the server to complete authentication."
 line "CYAN"
 
 PARSED=$(echo "${STARTUP}" | sed -e 's/{{/${/g' -e 's/}}/}/g' | eval echo "$(cat -)")
