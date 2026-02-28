@@ -75,9 +75,9 @@ else
 fi
 
 # Replace Startup Variables
-modifiedStartup=`eval echo $(echo ${STARTUP} | sed -e 's/{{/${/g' -e 's/}}/}/g')`
+MODIFIED_STARTUP=$(echo ${STARTUP} | sed -e 's/{{/${/g' -e 's/}}/}/g')
 
 # Run the Server
 echo -e "Starting server..."
-echo -e ":/home/container$ ${modifiedStartup}"
-${modifiedStartup}
+echo -e ":/home/container$ ${MODIFIED_STARTUP}"
+eval ${MODIFIED_STARTUP}
