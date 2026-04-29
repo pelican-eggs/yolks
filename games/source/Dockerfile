@@ -20,7 +20,7 @@
 # SOFTWARE.
 #
 
-FROM        --platform=$TARGETOS/$TARGETARCH debian:bookworm-slim
+FROM        --platform=$TARGETOS/$TARGETARCH debian:trixie-slim
 
 LABEL       author="Matthew Penner" maintainer="matthew@pterodactyl.io"
 
@@ -50,13 +50,11 @@ RUN         dpkg --add-architecture i386 \
                 lib32stdc++6 \
                 lib32tinfo6 \
                 lib32z1 \
-                libcurl3-gnutls:i386 \
                 libcurl4-gnutls-dev:i386 \
-                libcurl4:i386 \
                 libfontconfig1 \
-                libgcc-11-dev \
                 libgcc-12-dev \
-                libncurses5:i386 \
+                libgcc-13-dev \
+                libncurses6:i386 \
                 libsdl1.2debian \
                 libsdl2-2.0-0:i386 \
                 libssl-dev:i386 \
