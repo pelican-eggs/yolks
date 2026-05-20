@@ -21,20 +21,20 @@ jobs:
         tag:
           - teaspeak
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v4
         with:
           buildkitd-flags: --debug
       - id: lower-repo
         name: Repository to lowercase
         run: |
           echo "repository=${GITHUB_REPOSITORY_OWNER@L}" >> $GITHUB_OUTPUT
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ steps.lower-repo.outputs.repository }}
           password: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: ./voice/${{ matrix.tag }}
           file: ./voice/${{ matrix.tag }}/Dockerfile
@@ -43,39 +43,99 @@ jobs:
           tags: |
             ghcr.io/${{ steps.lower-repo.outputs.repository }}/yolks:voice_${{ matrix.tag }}
             ${{ github.repository_owner == 'pelican-eggs' && format('ghcr.io/parkervcp/yolks:voice_{0}', matrix.tag) || '' }}
+      - name: Retry build
+        if: failure()
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          command: |
+            docker buildx build \
+              --file ./voice/${{ matrix.tag }}/Dockerfile \
+              --platform linux/amd64 \
+              --push \
+              --tag ghcr.io/${{ steps.lower-repo.outputs.repository }}/yolks:voice_${{ matrix.tag }} \
+              ./voice/${{ matrix.tag }}
 
+  build:
+    name: "build:voice_${{ matrix.tag }} (${{ matrix.config.platform }})"
+    runs-on: ${{ matrix.config.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - platform: linux/amd64
+            platform_suffix: amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            platform_suffix: arm64
+            runner: ubuntu-24.04-arm
+        tag:
+          - mumble
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v4
+        with:
+          buildkitd-flags: --debug
+      - id: lower-repo
+        name: Repository to lowercase
+        run: |
+          echo "repository=${GITHUB_REPOSITORY_OWNER@L}" >> $GITHUB_OUTPUT
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ steps.lower-repo.outputs.repository }}
+          password: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v7
+        with:
+          context: ./voice/${{ matrix.tag }}
+          file: ./voice/${{ matrix.tag }}/Dockerfile
+          platforms: ${{ matrix.config.platform }}
+          push: true
+          tags: |
+            ghcr.io/${{ steps.lower-repo.outputs.repository }}/yolks:voice_${{ matrix.tag }}-${{ matrix.config.platform_suffix }}
+            ${{ github.repository_owner == 'pelican-eggs' && format('ghcr.io/parkervcp/yolks:voice_{0}-{1}', matrix.tag, matrix.config.platform_suffix) || '' }}
+      - name: Retry build
+        if: failure()
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          command: |
+            docker buildx build \
+              --file ./voice/${{ matrix.tag }}/Dockerfile \
+              --platform ${{ matrix.config.platform }} \
+              --push \
+              --tag ghcr.io/${{ steps.lower-repo.outputs.repository }}/yolks:voice_${{ matrix.tag }}-${{ matrix.config.platform_suffix }} \
+              ./voice/${{ matrix.tag }}
 
-  pushx64_arm64:
-    name: "yolks:voice_${{ matrix.tag }}"
+  merge:
+    name: "merge:voice_${{ matrix.tag }}"
     runs-on: ubuntu-latest
+    needs: build
     strategy:
       fail-fast: false
       matrix:
         tag:
           - mumble
     steps:
-      - uses: actions/checkout@v4
-      # Setup QEMU for ARM64 Build
-      - uses: docker/setup-qemu-action@v3      
-      - uses: docker/setup-buildx-action@v3
-        with:
-          version: "v0.8.2"
-          buildkitd-flags: --debug
       - id: lower-repo
         name: Repository to lowercase
         run: |
           echo "repository=${GITHUB_REPOSITORY_OWNER@L}" >> $GITHUB_OUTPUT
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ steps.lower-repo.outputs.repository }}
           password: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
-        with:
-          context: ./voice/${{ matrix.tag }}
-          file: ./voice/${{ matrix.tag }}/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            ghcr.io/${{ steps.lower-repo.outputs.repository }}/yolks:voice_${{ matrix.tag }}
-            ${{ github.repository_owner == 'pelican-eggs' && format('ghcr.io/parkervcp/yolks:voice_{0}', matrix.tag) || '' }}
+      - name: Create multi-arch manifest
+        run: |
+          docker buildx imagetools create -t ghcr.io/${{ steps.lower-repo.outputs.repository }}/yolks:voice_${{ matrix.tag }} \
+            ghcr.io/${{ steps.lower-repo.outputs.repository }}/yolks:voice_${{ matrix.tag }}-amd64 \
+            ghcr.io/${{ steps.lower-repo.outputs.repository }}/yolks:voice_${{ matrix.tag }}-arm64
+      - name: Create pelican-eggs tag
+        if: github.repository_owner == 'pelican-eggs'
+        run: |
+          docker buildx imagetools create -t ghcr.io/parkervcp/yolks:voice_${{ matrix.tag }} \
+            ghcr.io/${{ steps.lower-repo.outputs.repository }}/yolks:voice_${{ matrix.tag }}-amd64 \
+            ghcr.io/${{ steps.lower-repo.outputs.repository }}/yolks:voice_${{ matrix.tag }}-arm64

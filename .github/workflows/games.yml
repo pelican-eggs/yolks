@@ -31,20 +31,20 @@ jobs:
           - zandronum
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v4
         with:
           buildkitd-flags: --debug
       - id: lower-repo
         name: Repository to lowercase
         run: |
           echo "repository=${GITHUB_REPOSITORY_OWNER@L}" >> $GITHUB_OUTPUT
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ steps.lower-repo.outputs.repository }}
           password: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: ./games/${{ matrix.game }}
           file: ./games/${{ matrix.game }}/Dockerfile
@@ -53,9 +53,78 @@ jobs:
           tags: |
             ghcr.io/${{ steps.lower-repo.outputs.repository }}/games:${{ matrix.game }}
             ${{ github.repository_owner == 'pelican-eggs' && format('ghcr.io/parkervcp/games:{0}', matrix.game) || '' }}
-  pushAll:
-    name: "games_All:${{ matrix.game }}"
+      - name: Retry build
+        if: failure()
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          command: |
+            docker buildx build \
+              --file ./games/${{ matrix.game }}/Dockerfile \
+              --platform linux/amd64 \
+              --push \
+              --tag ghcr.io/${{ steps.lower-repo.outputs.repository }}/games:${{ matrix.game }} \
+              ./games/${{ matrix.game }}
+
+  build:
+    name: "games_build:${{ matrix.game }} (${{ matrix.config.platform }})"
+    runs-on: ${{ matrix.config.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - platform: linux/amd64
+            platform_suffix: amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            platform_suffix: arm64
+            runner: ubuntu-24.04-arm
+        game:
+          - minetest
+          - mta
+          - hytale
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v4
+        with:
+          buildkitd-flags: --debug
+      - id: lower-repo
+        name: Repository to lowercase
+        run: |
+          echo "repository=${GITHUB_REPOSITORY_OWNER@L}" >> $GITHUB_OUTPUT
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ steps.lower-repo.outputs.repository }}
+          password: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v7
+        with:
+          context: ./games/${{ matrix.game }}
+          file: ./games/${{ matrix.game }}/Dockerfile
+          platforms: ${{ matrix.config.platform }}
+          push: true
+          tags: |
+            ghcr.io/${{ steps.lower-repo.outputs.repository }}/games:${{ matrix.game }}-${{ matrix.config.platform_suffix }}
+            ${{ github.repository_owner == 'pelican-eggs' && format('ghcr.io/parkervcp/games:{0}-{1}', matrix.game, matrix.config.platform_suffix) || '' }}
+      - name: Retry build
+        if: failure()
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          command: |
+            docker buildx build \
+              --file ./games/${{ matrix.game }}/Dockerfile \
+              --platform ${{ matrix.config.platform }} \
+              --push \
+              --tag ghcr.io/${{ steps.lower-repo.outputs.repository }}/games:${{ matrix.game }}-${{ matrix.config.platform_suffix }} \
+              ./games/${{ matrix.game }}
+
+  merge:
+    name: "games_merge:${{ matrix.game }}"
     runs-on: ubuntu-latest
+    needs: build
     strategy:
       fail-fast: false
       matrix:
@@ -64,29 +133,23 @@ jobs:
           - mta
           - hytale
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64,amd64
-      - uses: docker/setup-buildx-action@v3
-        with:
-          buildkitd-flags: --debug
       - id: lower-repo
         name: Repository to lowercase
         run: |
           echo "repository=${GITHUB_REPOSITORY_OWNER@L}" >> $GITHUB_OUTPUT
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ steps.lower-repo.outputs.repository }}
           password: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
-        with:
-          context: ./games/${{ matrix.game }}
-          file: ./games/${{ matrix.game }}/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            ghcr.io/${{ steps.lower-repo.outputs.repository }}/games:${{ matrix.game }}
-            ${{ github.repository_owner == 'pelican-eggs' && format('ghcr.io/parkervcp/games:{0}', matrix.game) || '' }}
+      - name: Create multi-arch manifest
+        run: |
+          docker buildx imagetools create -t ghcr.io/${{ steps.lower-repo.outputs.repository }}/games:${{ matrix.game }} \
+            ghcr.io/${{ steps.lower-repo.outputs.repository }}/games:${{ matrix.game }}-amd64 \
+            ghcr.io/${{ steps.lower-repo.outputs.repository }}/games:${{ matrix.game }}-arm64
+      - name: Create pelican-eggs tag
+        if: github.repository_owner == 'pelican-eggs'
+        run: |
+          docker buildx imagetools create -t ghcr.io/parkervcp/games:${{ matrix.game }} \
+            ghcr.io/${{ steps.lower-repo.outputs.repository }}/games:${{ matrix.game }}-amd64 \
+            ghcr.io/${{ steps.lower-repo.outputs.repository }}/games:${{ matrix.game }}-arm64

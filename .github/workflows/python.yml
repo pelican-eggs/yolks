@@ -12,14 +12,20 @@ permissions:
   packages: write
 
 jobs:
-  push:
-    name: "yolks:python_${{ matrix.tag }}"
-    runs-on: ubuntu-latest
+  build:
+    name: "build:python_${{ matrix.tag }} (${{ matrix.config.platform }})"
+    runs-on: ${{ matrix.config.runner }}
     strategy:
       fail-fast: false
       matrix:
+        config:
+          - platform: linux/amd64
+            platform_suffix: amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            platform_suffix: arm64
+            runner: ubuntu-24.04-arm
         tag:
-          - '2.7'
           - '3.7'
           - '3.8'
           - '3.9'
@@ -29,27 +35,78 @@ jobs:
           - '3.13'
           - '3.14'
     steps:
-      - uses: actions/checkout@v4
-      # Setup QEMU for ARM64 Build
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v4
         with:
           buildkitd-flags: --debug
       - id: lower-repo
         name: Repository to lowercase
         run: |
           echo "repository=${GITHUB_REPOSITORY_OWNER@L}" >> $GITHUB_OUTPUT
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ steps.lower-repo.outputs.repository }}
           password: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
+        id: build
+        continue-on-error: true
         with:
           context: ./python
           file: ./python/${{ matrix.tag }}/Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ matrix.config.platform }}
           push: true
           tags: |
-            ghcr.io/${{ steps.lower-repo.outputs.repository }}/yolks:python_${{ matrix.tag }}
-            ${{ github.repository_owner == 'pelican-eggs' && format('ghcr.io/parkervcp/yolks:python_{0}', matrix.tag) || '' }}
+            ghcr.io/${{ steps.lower-repo.outputs.repository }}/yolks:python_${{ matrix.tag }}-${{ matrix.config.platform_suffix }}
+            ${{ github.repository_owner == 'pelican-eggs' && format('ghcr.io/parkervcp/yolks:python_{0}-{1}', matrix.tag, matrix.config.platform_suffix) || '' }}
+      - name: Retry build
+        if: steps.build.outcome == 'failure'
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          command: |
+            docker buildx build \
+              --file ./python/${{ matrix.tag }}/Dockerfile \
+              --platform ${{ matrix.config.platform }} \
+              --push \
+              --tag ghcr.io/${{ steps.lower-repo.outputs.repository }}/yolks:python_${{ matrix.tag }}-${{ matrix.config.platform_suffix }} \
+              ./python
+
+  merge:
+    name: "merge:python_${{ matrix.tag }}"
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        tag:
+          - '3.7'
+          - '3.8'
+          - '3.9'
+          - '3.10'
+          - '3.11'
+          - '3.12'
+          - '3.13'
+          - '3.14'
+    steps:
+      - id: lower-repo
+        name: Repository to lowercase
+        run: |
+          echo "repository=${GITHUB_REPOSITORY_OWNER@L}" >> $GITHUB_OUTPUT
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ steps.lower-repo.outputs.repository }}
+          password: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
+      - name: Create multi-arch manifest
+        run: |
+          docker buildx imagetools create -t ghcr.io/${{ steps.lower-repo.outputs.repository }}/yolks:python_${{ matrix.tag }} \
+            ghcr.io/${{ steps.lower-repo.outputs.repository }}/yolks:python_${{ matrix.tag }}-amd64 \
+            ghcr.io/${{ steps.lower-repo.outputs.repository }}/yolks:python_${{ matrix.tag }}-arm64
+      - name: Create pelican-eggs tag
+        if: github.repository_owner == 'pelican-eggs'
+        run: |
+          docker buildx imagetools create -t ghcr.io/parkervcp/yolks:python_${{ matrix.tag }} \
+            ghcr.io/${{ steps.lower-repo.outputs.repository }}/yolks:python_${{ matrix.tag }}-amd64 \
+            ghcr.io/${{ steps.lower-repo.outputs.repository }}/yolks:python_${{ matrix.tag }}-arm64

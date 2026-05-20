@@ -28,20 +28,20 @@ jobs:
           - devel
           - staging
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v4
         with:
           buildkitd-flags: --debug
       - id: lower-repo
         name: Repository to lowercase
         run: |
           echo "repository=${GITHUB_REPOSITORY_OWNER@L}" >> $GITHUB_OUTPUT
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ steps.lower-repo.outputs.repository }}
           password: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: ./wine
           file: ./wine/${{ matrix.tag }}/Dockerfile
@@ -50,3 +50,16 @@ jobs:
           tags: |
             ghcr.io/${{ steps.lower-repo.outputs.repository }}/yolks:wine_${{ matrix.tag }}
             ${{ github.repository_owner == 'pelican-eggs' && format('ghcr.io/parkervcp/yolks:wine_{0}', matrix.tag) || '' }}
+      - name: Retry build
+        if: failure()
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          command: |
+            docker buildx build \
+              --file ./wine/${{ matrix.tag }}/Dockerfile \
+              --platform linux/amd64 \
+              --push \
+              --tag ghcr.io/${{ steps.lower-repo.outputs.repository }}/yolks:wine_${{ matrix.tag }} \
+              ./wine
