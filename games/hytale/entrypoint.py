@@ -61,7 +61,7 @@ HYTALE_SESSION_LOGOUT_URL = "https://sessions.hytale.com/game-session"
 OAUTH_CLIENT_ID = "hytale-server"
 OAUTH_SCOPE = "openid offline auth:server"
 
-VERSION_PATTERN = r'^\d{4}\.\d{2}\.\d{2}-[a-f0-9]+$'
+VERSION_PATTERN = r'^[a-zA-Z0-9][a-zA-Z0-9._-]*$'
 VERSION_FILE = ".version"
 PATCHLINE_FILE = ".patchline"
 BACKUP_SERVER_FILES = ["HytaleServer.jar", "HytaleServer.aot", ".version", ".patchline"]
@@ -318,10 +318,10 @@ def backup_current_version(server_dir, backup_base, patchline, retention):
     # Cleanup old backups: keep only N most recent versions per patchline
     patchline_dir = backup_base / patchline
     if patchline_dir.exists():
-        backups = sorted([d for d in patchline_dir.iterdir() if d.is_dir() and d != backup_dir])
-        old_backups = backups[:-retention] if retention > 0 else backups
-        for old in old_backups:
-            shutil.rmtree(old, ignore_errors=True)
+        if retention > 0:
+            backups = sorted([d for d in patchline_dir.iterdir() if d.is_dir() and d != backup_dir])
+            for old in backups[:-retention]:
+                shutil.rmtree(old, ignore_errors=True)
     log(C['G'], f"[backup] ✓ .server-backups/{patchline}/{version}/ (retention: {retention})")
 
 def restore_from_backup(backup_dir, server_dir):
@@ -443,22 +443,25 @@ def api_download(session, auth_mgr, patchline, target_dir):
                         print(f"\r[api] {downloaded/(1024*1024):.1f}/{total/(1024*1024):.1f} MB ({100*downloaded/total:.0f}%)", end='', file=sys.stderr)
             if total > 0:
                 print(file=sys.stderr)
-            if sha256_expected:
-                h = hashlib.sha256()
-                with open(zip_path, 'rb') as hf:
-                    while blk := hf.read(65536):
-                        h.update(blk)
-                if h.hexdigest() != sha256_expected:
-                    log(C['Y'], "[api] SHA-256 mismatch, retrying")
-                    zip_path.unlink()
-                    continue
+            if not sha256_expected:
+                log(C['Y'], "[api] No SHA-256 in manifest, refusing download")
+                zip_path.unlink()
+                continue
+            h = hashlib.sha256()
+            with open(zip_path, 'rb') as hf:
+                while blk := hf.read(65536):
+                    h.update(blk)
+            if h.hexdigest() != sha256_expected:
+                log(C['Y'], "[api] SHA-256 mismatch, retrying")
+                zip_path.unlink()
+                continue
             log(C['G'], "[api] ✓ Verified")
             log(C['B'], "[api] Extracting...")
             with zipfile.ZipFile(zip_path) as zf:
                 target_resolved = target_dir.resolve()
                 for member in zf.infolist():
                     dest = (target_dir / member.filename).resolve()
-                    if not str(dest).startswith(str(target_resolved)):
+                    if not dest.is_relative_to(target_resolved):
                         log(C['Y'], f"[api] Skipping unsafe zip entry: {member.filename}")
                         continue
                     if member.is_dir():
