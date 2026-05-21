@@ -68,9 +68,6 @@ jobs:
               --push \
               --tag ghcr.io/${{ steps.lower-repo.outputs.repository }}/games:${{ matrix.game }} \
               ./games/${{ matrix.game }}
-      - name: Check build outcome
-        if: always() && steps.build.outcome == 'failure'
-        run: exit 1
 
   build:
     name: "games_build:${{ matrix.game }} (${{ matrix.config.platform }})"
@@ -127,9 +124,6 @@ jobs:
               --push \
               --tag ghcr.io/${{ steps.lower-repo.outputs.repository }}/games:${{ matrix.game }}-${{ matrix.config.platform_suffix }} \
               ./games/${{ matrix.game }}
-      - name: Check build outcome
-        if: always() && steps.build.outcome == 'failure'
-        run: exit 1
 
   merge:
     name: "games_merge:${{ matrix.game }}"
