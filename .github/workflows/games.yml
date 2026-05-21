@@ -45,6 +45,8 @@ jobs:
           username: ${{ steps.lower-repo.outputs.repository }}
           password: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
       - uses: docker/build-push-action@v7
+        id: build
+        continue-on-error: true
         with:
           context: ./games/${{ matrix.game }}
           file: ./games/${{ matrix.game }}/Dockerfile
@@ -54,7 +56,7 @@ jobs:
             ghcr.io/${{ steps.lower-repo.outputs.repository }}/games:${{ matrix.game }}
             ${{ github.repository_owner == 'pelican-eggs' && format('ghcr.io/parkervcp/games:{0}', matrix.game) || '' }}
       - name: Retry build
-        if: failure()
+        if: steps.build.outcome == 'failure'
         uses: nick-fields/retry@v3
         with:
           timeout_minutes: 20
@@ -66,6 +68,9 @@ jobs:
               --push \
               --tag ghcr.io/${{ steps.lower-repo.outputs.repository }}/games:${{ matrix.game }} \
               ./games/${{ matrix.game }}
+      - name: Check build outcome
+        if: always() && steps.build.outcome == 'failure'
+        run: exit 1
 
   build:
     name: "games_build:${{ matrix.game }} (${{ matrix.config.platform }})"
@@ -99,6 +104,8 @@ jobs:
           username: ${{ steps.lower-repo.outputs.repository }}
           password: ${{ secrets.REGISTRY_TOKEN || secrets.GITHUB_TOKEN }}
       - uses: docker/build-push-action@v7
+        id: build
+        continue-on-error: true
         with:
           context: ./games/${{ matrix.game }}
           file: ./games/${{ matrix.game }}/Dockerfile
@@ -108,7 +115,7 @@ jobs:
             ghcr.io/${{ steps.lower-repo.outputs.repository }}/games:${{ matrix.game }}-${{ matrix.config.platform_suffix }}
             ${{ github.repository_owner == 'pelican-eggs' && format('ghcr.io/parkervcp/games:{0}-{1}', matrix.game, matrix.config.platform_suffix) || '' }}
       - name: Retry build
-        if: failure()
+        if: steps.build.outcome == 'failure'
         uses: nick-fields/retry@v3
         with:
           timeout_minutes: 20
@@ -120,6 +127,9 @@ jobs:
               --push \
               --tag ghcr.io/${{ steps.lower-repo.outputs.repository }}/games:${{ matrix.game }}-${{ matrix.config.platform_suffix }} \
               ./games/${{ matrix.game }}
+      - name: Check build outcome
+        if: always() && steps.build.outcome == 'failure'
+        run: exit 1
 
   merge:
     name: "games_merge:${{ matrix.game }}"
