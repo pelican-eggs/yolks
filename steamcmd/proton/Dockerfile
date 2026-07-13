@@ -1,7 +1,7 @@
 # ---------------------------------------------
 # Steam Proton image
 # ---------------------------------------------
-FROM        debian:bookworm-slim
+FROM        debian:trixie-slim
 
 LABEL       author="Torsten Widmann" maintainer="info@goover.de"
 
@@ -12,22 +12,22 @@ RUN         apt install -y --no-install-recommends \
                 wget \
                 iproute2 \
                 gnupg2 \
-                software-properties-common \
                 libntlm0 \
                 winbind \
                 xvfb \
                 xauth \
-                libncurses5-dev:i386 \
+                libncurses-dev:i386 \
                 libncurses6 \
                 dbus \
                 libgdiplus \
-                lib32gcc-s1
+                lib32gcc-s1 \
+                libc6
 RUN         apt install -y \
                 alsa-tools \
                 libpulse0 \
                 pulseaudio \
                 libpulse-dev \
-                libasound2 \
+                libasound2-dev \
                 libao-common \
                 gnutls-bin \
                 gnupg \
