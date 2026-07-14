@@ -320,8 +320,10 @@ is tagged correctly.
   * `ghcr.io/pelican-eggs/steamcmd:dotnet`
 * [`SteamCMD Proton`](/steamcmd/proton)
   * `ghcr.io/pelican-eggs/steamcmd:proton`
-* [`SteamCMD Proton`](/steamcmd/proton_8)
+* [`SteamCMD Proton 8`](/steamcmd/proton_8)
   * `ghcr.io/pelican-eggs/steamcmd:proton_8`
+* [`SteamCMD Proton 10`](/steamcmd/proton_10)
+  * `ghcr.io/pelican-eggs/steamcmd:proton_10`  
 * [`SteamCMD Sniper latest`](/steamcmd/sniper)
   * `ghcr.io/pelican-eggs/steamcmd:sniper`
 * [`SteamCMD Ubuntu latest LTS`](/steamcmd/ubuntu)
