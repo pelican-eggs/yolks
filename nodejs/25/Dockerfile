@@ -1,4 +1,4 @@
-FROM        --platform=$TARGETOS/$TARGETARCH node:25-bookworm-slim
+FROM        --platform=$TARGETOS/$TARGETARCH node:25-trixie-slim
 
 LABEL       author="Michael Parker" maintainer="parker@pterodactyl.io"
 
@@ -27,7 +27,7 @@ RUN         apt update \
                 libnss3 \
                 tini
 
-RUN         npm install --global npm@latest typescript ts-node @types/node
+RUN         npm install --global npm@latest typescript ts-node @types/node tsx
 
 RUN         npm install -g corepack --force
 RUN         corepack enable
