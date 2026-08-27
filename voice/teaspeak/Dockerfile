@@ -24,7 +24,7 @@ FROM      --platform=$TARGETOS/$TARGETARCH debian:bookworm-slim
 
 LABEL     author="Torsten Widmann" maintainer="info@goover.de"
 
-LABEL     org.opencontainers.image.source="https://github.com/pterodactyl/yolks"
+LABEL     org.opencontainers.image.source="https://github.com/pelican-eggs/yolks"
 LABEL     org.opencontainers.image.licenses=MIT
 
 ENV       DEBIAN_FRONTEND=noninteractive
