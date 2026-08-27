@@ -1,7 +1,7 @@
 FROM        --platform=$TARGETOS/$TARGETARCH node:22-alpine
 
 LABEL       author="Torsten Widmann" maintainer="info@goover.de"
-LABEL       org.opencontainers.image.source="https://github.com/gOOvER/own-pterodactyl-images"
+LABEL       org.opencontainers.image.source="https://github.com/gOOvER/own-pelican-images"
 LABEL       org.opencontainers.image.licenses=MIT
 
 RUN         apk update \

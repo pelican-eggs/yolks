@@ -1,6 +1,6 @@
 FROM        --platform=$TARGETOS/$TARGETARCH node:26-trixie-slim
 
-LABEL       author="Michael Parker" maintainer="parker@pterodactyl.io"
+LABEL       author="Michael Parker" maintainer="parker@pelican.dev"
 
 RUN         useradd -m -d /home/container container
 STOPSIGNAL SIGINT

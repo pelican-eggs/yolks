@@ -1,6 +1,6 @@
 FROM        --platform=$TARGETOS/$TARGETARCH debian:bookworm-slim
 
-LABEL author="Michael Parker" maintainer="parker@pterodactyl.io"
+LABEL author="Michael Parker" maintainer="parker@pelican.dev"
 
 ## update base packages
 RUN apt update && apt upgrade -y
