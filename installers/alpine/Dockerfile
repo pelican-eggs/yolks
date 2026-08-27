@@ -22,7 +22,7 @@
 
 FROM        --platform=$TARGETOS/$TARGETARCH alpine:latest
 
-LABEL       author="Matthew Penner" maintainer="matthew@pelican.dev"
+LABEL       author="Matthew Penner" maintainer="matthew@pterodactyl.io"
 
 LABEL       org.opencontainers.image.source="https://github.com/pelican-eggs/yolks"
 LABEL       org.opencontainers.image.licenses=MIT
