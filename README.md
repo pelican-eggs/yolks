@@ -318,6 +318,8 @@ is tagged correctly.
   * `ghcr.io/pelican-eggs/steamcmd:debian`
 * [`SteamCMD Debian Dotnet`](/steamcmd/dotnet)
   * `ghcr.io/pelican-eggs/steamcmd:dotnet`
+* [`SteamCMD Debian Node.js`](/steamcmd/nodejs)
+  * `ghcr.io/pelican-eggs/steamcmd:nodejs`
 * [`SteamCMD Proton`](/steamcmd/proton)
   * `ghcr.io/pelican-eggs/steamcmd:proton`
 * [`SteamCMD Proton 8`](/steamcmd/proton_8)

@@ -22,6 +22,7 @@ jobs:
           - debian
           - ubuntu
           - dotnet
+          - nodejs
           - proton
           - proton_8
           - 'proton_10'
