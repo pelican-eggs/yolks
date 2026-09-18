@@ -7,23 +7,21 @@ LABEL       org.opencontainers.image.authors="Michael Parker <parker@pelican.dev
 RUN         apt update -y \
             && apt install -y \
                 curl \
-                wget \
-                lsof \
                 ca-certificates \
-                openssl \
-                git \
-                tar \
-                sqlite3 \
                 fontconfig \
                 tzdata \
-                iproute2 \
-                libfreetype6 \
                 tini \
-                zip \
                 unzip \
-                jq \
                 dbus \
+                tar \
+                zip \
+                sqlite3 \
+                git \
+                openssl \
+                lsof \
                 file \
+                python3-minimal \
+                python3-requests \
             && apt clean \
             && rm -rf /var/lib/apt/lists/*
 
@@ -43,7 +41,7 @@ WORKDIR     /home/container
 
 STOPSIGNAL SIGINT
 
-COPY        --chown=container:container ./entrypoint.sh /entrypoint.sh
-RUN         chmod +x /entrypoint.sh
+COPY        --chown=container:container ./entrypoint.py /entrypoint.py
+RUN         chmod +x /entrypoint.py
 ENTRYPOINT    ["/usr/bin/tini", "-g", "--"]
-CMD         ["/entrypoint.sh"]
+CMD         ["/entrypoint.py"]

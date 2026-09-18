@@ -22,7 +22,6 @@ jobs:
           - altv
           - arma3
           - dayz
-          - hytale
           - mohaa
           - rust
           - samp
@@ -63,6 +62,7 @@ jobs:
         game:
           - minetest
           - mta
+          - hytale
     steps:
       - uses: actions/checkout@v4
       - name: Set up QEMU

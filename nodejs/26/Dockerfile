@@ -1,10 +1,9 @@
-FROM        --platform=$TARGETOS/$TARGETARCH node:20-bookworm-slim
+FROM        --platform=$TARGETOS/$TARGETARCH node:26-trixie-slim
 
 LABEL       author="Michael Parker" maintainer="parker@pterodactyl.io"
 
-# add container user and set stop signal
 RUN         useradd -m -d /home/container container
-STOPSIGNAL  SIGINT
+STOPSIGNAL SIGINT
 
 RUN         apt update \
             && apt -y install \
@@ -27,10 +26,9 @@ RUN         apt update \
                 libnss3 \
                 tini
 
-RUN         npm install --global npm@11.18.0 typescript ts-node @types/node tsx
+RUN         npm install --global npm@latest typescript ts-node @types/node tsx
 
-# install pnpm
-RUN         npm install -g corepack
+RUN         npm install -g corepack --force
 RUN         corepack enable
 RUN         corepack prepare pnpm@latest --activate
 
@@ -40,5 +38,6 @@ WORKDIR     /home/container
 
 COPY        --chown=container:container ./../entrypoint.sh /entrypoint.sh
 RUN         chmod +x /entrypoint.sh
+
 ENTRYPOINT    ["/usr/bin/tini", "-g", "--"]
 CMD         ["/entrypoint.sh"]

@@ -1,7 +1,7 @@
 # ---------------------------------------------
 # Steam Proton image
 # ---------------------------------------------
-FROM        debian:trixie-slim
+FROM        debian:bookworm-slim
 
 LABEL       author="Torsten Widmann" maintainer="info@goover.de"
 
@@ -12,22 +12,22 @@ RUN         apt install -y --no-install-recommends \
                 wget \
                 iproute2 \
                 gnupg2 \
+                software-properties-common \
                 libntlm0 \
                 winbind \
                 xvfb \
                 xauth \
-                libncurses-dev:i386 \
+                libncurses5-dev:i386 \
                 libncurses6 \
                 dbus \
                 libgdiplus \
-                lib32gcc-s1 \
-                libc6
+                lib32gcc-s1
 RUN         apt install -y \
                 alsa-tools \
                 libpulse0 \
                 pulseaudio \
                 libpulse-dev \
-                libasound2-dev \
+                libasound2 \
                 libao-common \
                 gnutls-bin \
                 gnupg \
@@ -42,7 +42,7 @@ RUN         apt install -y \
                 pipx
 
 # Download Proton GE
-RUN         curl -sLOJ "$(curl -s https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest | grep browser_download_url | cut -d\" -f4 | grep -v aarch64 | egrep .tar.gz)"
+RUN         curl -sLOJ "$(curl -s https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/tags/GE-Proton10-34 | grep browser_download_url | cut -d\" -f4  | egrep .tar.gz)"
 RUN         tar -xzf GE-Proton*.tar.gz -C /usr/local/bin/ --strip-components=1
 RUN         rm GE-Proton*.*
 
