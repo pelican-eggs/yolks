@@ -1,6 +1,6 @@
 FROM        --platform=$TARGETOS/$TARGETARCH mongo:7-jammy
 
-LABEL       author="Michael Parker" maintainer="parker@pterodactyl.io"
+LABEL       author="Michael Parker" maintainer="parker@pelican.dev"
 
 ## install nodejs 20
 RUN apt update && apt install --no-install-recommends -y curl apt-transport-https ca-certificates gnupg \ 
