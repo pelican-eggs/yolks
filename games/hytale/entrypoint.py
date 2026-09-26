@@ -61,7 +61,7 @@ HYTALE_SESSION_LOGOUT_URL = "https://sessions.hytale.com/game-session"
 OAUTH_CLIENT_ID = "hytale-server"
 OAUTH_SCOPE = "openid offline auth:server"
 
-VERSION_PATTERN = r'^\d{4}\.\d{2}\.\d{2}-[a-f0-9]+$'
+VERSION_PATTERN = r'^[a-zA-Z0-9][a-zA-Z0-9._-]*$'
 VERSION_FILE = ".version"
 PATCHLINE_FILE = ".patchline"
 BACKUP_SERVER_FILES = ["HytaleServer.jar", "HytaleServer.aot", ".version", ".patchline"]
@@ -148,7 +148,11 @@ class AuthManager:
                 with suppress(Exception):
                     error = resp.json().get('error', '')
                     if error in ('invalid_grant', 'invalid_client', 'unauthorized_client'):
-                        self.state_path.unlink()
+                        self.state.access_token = ''
+                        self.state.access_expires = 0
+                        self.state.refresh_token = ''
+                        self.state.refresh_expires = 0
+                        self.state_path.unlink(missing_ok=True)
         except Exception as e:
             log(C['Y'], f"[auth] Refresh error: {e}")
         return False
@@ -211,6 +215,16 @@ class AuthManager:
             log(C['R'], f"[auth] Device flow error: {e}")
         return False
 
+    def authed_request(self, method, url, **kwargs):
+        extra = kwargs.pop('headers', {})
+        def send():
+            return self.session.request(method, url,
+                headers={**extra, 'Authorization': f'Bearer {self.state.access_token}'}, **kwargs)
+        resp = send()
+        if resp.status_code == 401 and (self._refresh() or self._device_flow()):
+            resp = send()
+        return resp
+
     def ensure_session(self):
         if self.state.session_token and not (self.state.session_expires > 0 and time.time() + 60 >= self.state.session_expires):
             return True
@@ -223,8 +237,7 @@ class AuthManager:
                 pass
         if not self.state.profile_uuid:
             try:
-                resp = self.session.get(HYTALE_PROFILES_URL,
-                    headers={'Authorization': f'Bearer {self.state.access_token}'}, timeout=30)
+                resp = self.authed_request('GET', HYTALE_PROFILES_URL, timeout=30)
                 if resp.status_code == 200:
                     profiles = resp.json().get('profiles', [])
                     if profiles:
@@ -237,9 +250,7 @@ class AuthManager:
                 log(C['Y'], f"[auth] Profile error: {e}")
                 return False
         try:
-            resp = self.session.post(HYTALE_SESSION_URL,
-                headers={'Authorization': f'Bearer {self.state.access_token}', 'Content-Type': 'application/json'},
-                json={'uuid': self.state.profile_uuid}, timeout=30)
+            resp = self.authed_request('POST', HYTALE_SESSION_URL, json={'uuid': self.state.profile_uuid}, timeout=30)
             if resp.status_code == 200:
                 data = resp.json()
                 self.state.session_token = data.get('sessionToken', '')
@@ -253,7 +264,7 @@ class AuthManager:
                         self.state.session_expires = int(time.time()) + 3600
                 self.state.save(self.state_path)
                 return bool(self.state.session_token)
-            log(C['Y'], f"[auth] Session request failed (HTTP {resp.status_code})")
+            log(C['Y'], f"[auth] Session request failed (HTTP {resp.status_code}): {resp.text[:300]}")
         except Exception as e:
             log(C['Y'], f"[auth] Session error: {e}")
         return False
@@ -263,8 +274,8 @@ class AuthManager:
             return
         log(C['B'], "[auth] Cleaning up game session")
         try:
-            resp = self.session.delete(HYTALE_SESSION_LOGOUT_URL,
-                headers={'Authorization': f'Bearer {self.state.session_token}'}, timeout=10)
+            resp = requests.delete(HYTALE_SESSION_LOGOUT_URL,
+                headers={'Authorization': f'Bearer {self.state.session_token}'}, timeout=3)
             if resp.status_code in (200, 204):
                 log(C['G'], "[auth] ✓ Session terminated")
             else:
@@ -318,10 +329,10 @@ def backup_current_version(server_dir, backup_base, patchline, retention):
     # Cleanup old backups: keep only N most recent versions per patchline
     patchline_dir = backup_base / patchline
     if patchline_dir.exists():
-        backups = sorted([d for d in patchline_dir.iterdir() if d.is_dir() and d != backup_dir])
-        old_backups = backups[:-retention] if retention > 0 else backups
-        for old in old_backups:
-            shutil.rmtree(old, ignore_errors=True)
+        if retention > 0:
+            backups = sorted([d for d in patchline_dir.iterdir() if d.is_dir() and d != backup_dir])
+            for old in backups[:-retention]:
+                shutil.rmtree(old, ignore_errors=True)
     log(C['G'], f"[backup] ✓ .server-backups/{patchline}/{version}/ (retention: {retention})")
 
 def restore_from_backup(backup_dir, server_dir):
@@ -398,11 +409,19 @@ def get_maven_metadata(session, patchline):
         pass
     return None
 
-def get_maven_latest(session, patchline):
-    if metadata := get_maven_metadata(session, patchline):
-        if versions := re.findall(r'<version>\s*([^<]+)', metadata):
-            return versions[-1].strip()
-    return None
+def api_latest(session, auth_mgr, patchline):
+    if not auth_mgr.ensure_authenticated():
+        return None
+    try:
+        resp = auth_mgr.authed_request('GET', f"{HYTALE_ASSETS_API}/version/{patchline}.json", timeout=15)
+        if resp.status_code != 200:
+            return None
+        version = session.get(resp.json()['url'], timeout=15).json().get('version')
+        if version:
+            log(C['C'], f"[update] Latest {patchline}: {version}")
+        return version
+    except Exception:
+        return None
 
 def maven_version_exists(session, patchline, version):
     if metadata := get_maven_metadata(session, patchline):
@@ -416,15 +435,13 @@ def is_valid_backup(backup_path):
 def api_download(session, auth_mgr, patchline, target_dir):
     for attempt in range(3):
         try:
-            resp = session.get(f"{HYTALE_ASSETS_API}/version/{patchline}.json",
-                headers={'Authorization': f'Bearer {auth_mgr.state.access_token}'}, timeout=30)
+            resp = auth_mgr.authed_request('GET', f"{HYTALE_ASSETS_API}/version/{patchline}.json", timeout=30)
             if resp.status_code != 200:
                 continue
             manifest_data = session.get(resp.json()['url'], timeout=30).json()
             version, download_url, sha256_expected = manifest_data['version'], manifest_data['download_url'], manifest_data.get('sha256')
             log(C['C'], f"[api] Remote: {version}")
-            signed_dl = session.get(f"{HYTALE_ASSETS_API}/{download_url}",
-                headers={'Authorization': f'Bearer {auth_mgr.state.access_token}'}, timeout=30).json()['url']
+            signed_dl = auth_mgr.authed_request('GET', f"{HYTALE_ASSETS_API}/{download_url}", timeout=30).json()['url']
             zip_path = target_dir / "server.zip"
             target_dir.mkdir(parents=True, exist_ok=True)
             resp = session.get(signed_dl, stream=True, timeout=900)
@@ -443,22 +460,25 @@ def api_download(session, auth_mgr, patchline, target_dir):
                         print(f"\r[api] {downloaded/(1024*1024):.1f}/{total/(1024*1024):.1f} MB ({100*downloaded/total:.0f}%)", end='', file=sys.stderr)
             if total > 0:
                 print(file=sys.stderr)
-            if sha256_expected:
-                h = hashlib.sha256()
-                with open(zip_path, 'rb') as hf:
-                    while blk := hf.read(65536):
-                        h.update(blk)
-                if h.hexdigest() != sha256_expected:
-                    log(C['Y'], "[api] SHA-256 mismatch, retrying")
-                    zip_path.unlink()
-                    continue
+            if not sha256_expected:
+                log(C['Y'], "[api] No SHA-256 in manifest, refusing download")
+                zip_path.unlink()
+                continue
+            h = hashlib.sha256()
+            with open(zip_path, 'rb') as hf:
+                while blk := hf.read(65536):
+                    h.update(blk)
+            if h.hexdigest() != sha256_expected:
+                log(C['Y'], "[api] SHA-256 mismatch, retrying")
+                zip_path.unlink()
+                continue
             log(C['G'], "[api] ✓ Verified")
             log(C['B'], "[api] Extracting...")
             with zipfile.ZipFile(zip_path) as zf:
                 target_resolved = target_dir.resolve()
                 for member in zf.infolist():
                     dest = (target_dir / member.filename).resolve()
-                    if not str(dest).startswith(str(target_resolved)):
+                    if not dest.is_relative_to(target_resolved):
                         log(C['Y'], f"[api] Skipping unsafe zip entry: {member.filename}")
                         continue
                     if member.is_dir():
@@ -475,7 +495,7 @@ def api_download(session, auth_mgr, patchline, target_dir):
                 time.sleep(5 * (attempt + 1))
     return False
 
-def plan_update(session, server_version, patchline, local_version, local_patchline, staged_applied):
+def plan_update(session, auth_mgr, server_version, patchline, local_version, local_patchline, staged_applied):
     """Determine update strategy based on SERVER_VERSION.
 
     Priority order: local files → backups → API download
@@ -491,18 +511,18 @@ def plan_update(session, server_version, patchline, local_version, local_patchli
                 if backups := sorted([d for d in backup_dir.iterdir() if d.is_dir() and (d / "Server" / "HytaleServer.jar").exists()], reverse=True):
                     return UpdatePlan.BACKUP, backups[0].name, backups[0]
             return UpdatePlan.NONE, "", None
-        if maven_latest := get_maven_latest(session, patchline):
-            if local_version == maven_latest and (local_patchline == patchline or not local_patchline):
+        if remote := api_latest(session, auth_mgr, patchline):
+            if local_version == remote and (local_patchline == patchline or not local_patchline):
                 return UpdatePlan.NONE, "", None
-            if local_version == maven_latest and local_patchline != patchline:
-                return UpdatePlan.PATCHLINE, maven_latest, None
-            backup_path = backup_dir / maven_latest
+            if local_version == remote and local_patchline != patchline:
+                return UpdatePlan.PATCHLINE, remote, None
+            backup_path = backup_dir / remote
             if is_valid_backup(backup_path):
-                return UpdatePlan.BACKUP, maven_latest, backup_path
-            return UpdatePlan.API, maven_latest, None
+                return UpdatePlan.BACKUP, remote, backup_path
+            return UpdatePlan.API, remote, None
         if not has_jar:
             return UpdatePlan.API, "", None
-        log(C['Y'], "[update] Maven check failed, running existing server")
+        log(C['Y'], "[update] API check failed, running existing server")
         return UpdatePlan.NONE, "", None
     elif server_version == "previous":
         if not backup_dir.exists():
@@ -522,9 +542,9 @@ def plan_update(session, server_version, patchline, local_version, local_patchli
                 log(C['Y'], f"[update] Version {server_version} not found, running existing server")
                 return UpdatePlan.NONE, "", None
             die(f"Version {server_version} not available")
-        if maven_latest := get_maven_latest(session, patchline):
-            if maven_latest != server_version:
-                log(C['Y'], f"[update] Version {server_version} exists but API only serves latest ({maven_latest})")
+        if remote := api_latest(session, auth_mgr, patchline):
+            if remote != server_version:
+                log(C['Y'], f"[update] Version {server_version} exists but API only serves latest ({remote})")
                 if has_jar:
                     log(C['Y'], "[update] Running existing server")
                     return UpdatePlan.NONE, "", None
@@ -630,7 +650,8 @@ def main():
     retry = Retry(total=5, backoff_factor=2, status_forcelist=[429, 500, 502, 503, 504])
     session.mount("https://", HTTPAdapter(max_retries=retry))
     session.headers.update({"User-Agent": "HytaleServerLauncher/1.0"})
-    plan, target, backup_path = plan_update(session, SERVER_VERSION, PATCHLINE, local_version, local_patchline, staged_applied)
+    auth_mgr = AuthManager(session, HYTALE_AUTH_STATE_PATH)
+    plan, target, backup_path = plan_update(session, auth_mgr, SERVER_VERSION, PATCHLINE, local_version, local_patchline, staged_applied)
     if plan != UpdatePlan.NONE:
         log(C['C'], f"[update] Plan: {plan.value}" + (f" (target {target})" if target else ""))
     # Execute plan
@@ -653,7 +674,6 @@ def main():
         else:
             log(C['Y'], "[backup] Restore failed, running existing server")
     elif plan == UpdatePlan.API:
-        auth_mgr = AuthManager(session, HYTALE_AUTH_STATE_PATH)
         if auth_mgr.ensure_authenticated():
             download_dir = TMP_BASE / "api-download"
             shutil.rmtree(download_dir, ignore_errors=True)
@@ -677,8 +697,6 @@ def main():
             die("[auth] Authentication required")
     # Authentication for server startup
     if FLAGS['auth']:
-        if 'auth_mgr' not in locals():
-            auth_mgr = AuthManager(session, HYTALE_AUTH_STATE_PATH)
         if auth_mgr.ensure_authenticated() and auth_mgr.ensure_session():
             os.environ.update({
                 'HYTALE_SERVER_SESSION_TOKEN': auth_mgr.state.session_token,
