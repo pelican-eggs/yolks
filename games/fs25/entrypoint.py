@@ -16,6 +16,7 @@ import time
 
 HOME = pathlib.Path("/home/container")
 LOG_DIR = HOME / "logs"
+INSTALLER_DIR = HOME / "installer"
 GAME_DIR = HOME / "game" / "Farming Simulator 2025"
 SERVER_EXE = GAME_DIR / "dedicatedServer.exe"
 CONTROL = "/opt/fs25/fs25ctl.py"
@@ -43,6 +44,42 @@ def log_access_addresses(public_host: str, novnc_port: str) -> None:
     log("----------------------------------------------------------------------")
     log(f"  Spielport: {game_port}/tcp+udp")
     log("======================================================================")
+
+
+def find_installation_media() -> list[pathlib.Path]:
+    if not INSTALLER_DIR.is_dir():
+        return []
+    executable_names = {"setup.exe", "farmingsimulator2025.exe"}
+    supported_archives = {".img", ".iso", ".zip"}
+    media = [
+        path
+        for path in INSTALLER_DIR.rglob("*")
+        if path.is_file()
+        and (path.suffix.lower() in supported_archives or path.name.lower() in executable_names)
+    ]
+    return sorted(
+        media,
+        key=lambda path: (len(path.relative_to(INSTALLER_DIR).parts), path.as_posix().lower()),
+    )
+
+
+def handle_incomplete_installation() -> None:
+    media = find_installation_media()
+    auto_install = os.environ.get("AUTO_INSTALL", "false").lower() == "true"
+    if media:
+        media_path = "/home/container/" + media[0].relative_to(HOME).as_posix()
+        log(f"Installationsmedium erkannt: {media_path}")
+        log("FS25-Installation ist noch nicht vollständig abgeschlossen.")
+    else:
+        log("Noch kein Installationsmedium erkannt. Datei nach /home/container/installer hochladen.")
+
+    if auto_install and media:
+        log("Automatische Installation wird gestartet. Fortschritt: /home/container/logs/automatic-install.log")
+        spawn([CONTROL, "install"], "automatic-install.log")
+    elif media:
+        log('Installation über noVNC mit "FS25 installieren / aktivieren" starten oder beobachten.')
+    elif auto_install:
+        log("AUTO_INSTALL ist aktiv. Nach dem Upload den Server neu starten.")
 
 
 def spawn(args: list[str], log_name: str | None = None) -> subprocess.Popen:
@@ -194,9 +231,7 @@ def main() -> int:
     log("FS25 image ready.")
 
     if not SERVER_EXE.is_file():
-        log("Noch keine Installation erkannt. Installer nach /home/container/installer hochladen.")
-        if os.environ.get("AUTO_INSTALL", "false").lower() == "true":
-            spawn([CONTROL, "install"], "automatic-install.log")
+        handle_incomplete_installation()
         return xvnc.wait()
 
     if os.environ.get("AUTO_INSTALL_DLC", "false").lower() == "true":
