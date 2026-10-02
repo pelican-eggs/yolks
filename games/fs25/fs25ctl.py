@@ -66,7 +66,7 @@ def ensure_directories() -> None:
 
 
 def run_checked(args: list[str], timeout: int | None = None) -> subprocess.CompletedProcess[str]:
-    log("Ausführen: " + " ".join(args))
+    log("Executing: " + " ".join(args))
     return subprocess.run(args, text=True, timeout=timeout, check=True)
 
 
@@ -136,7 +136,7 @@ def wineboot(mode: str, timeout: int, attempt: int) -> int:
 def ensure_prefix() -> None:
     ensure_directories()
     if wait_for_prefix(6):
-        log("Wine-Prefix ist vollständig und ausführbar.")
+        log("Wine prefix is complete and executable.")
         return
 
     timeout = int(env("WINEBOOT_TIMEOUT", "180"))
@@ -146,12 +146,12 @@ def ensure_prefix() -> None:
         layout_exists = False
 
     if layout_exists:
-        log("Vorhandener Wine-Prefix wird für Wine 11 aktualisiert.")
+        log("Updating the existing Wine prefix for Wine 11.")
         status = wineboot("--update", timeout, 0)
         if status == 0 and wait_for_prefix(60):
-            log("Vorhandener Wine-Prefix wurde erfolgreich aktualisiert.")
+            log("The existing Wine prefix was updated successfully.")
             return
-        log(f"Aktualisierung des vorhandenen Prefix fehlgeschlagen (Status {status}).")
+        log(f"Updating the existing Wine prefix failed with status {status}.")
 
     # Older image revisions expected built-in Wine DLLs inside drive_c and
     # could therefore move a healthy prefix aside. Prefer restoring the newest
@@ -166,39 +166,39 @@ def ensure_prefix() -> None:
             continue
         displaced = move_prefix_aside("failed-current")
         candidate.rename(PREFIX)
-        log(f"Vorheriger Wine-Prefix wurde aus {candidate} wiederhergestellt.")
+        log(f"Restored a previous Wine prefix from {candidate}.")
         status = wineboot("--update", timeout, 0)
         if status == 0 and wait_for_prefix(60):
-            log("Wiederhergestellter Wine-Prefix ist ausführbar.")
+            log("The restored Wine prefix is executable.")
             return
         failed = move_prefix_aside("failed-recovery")
-        log(f"Wiederherstellung war nicht ausführbar; Prefix liegt unter {failed}.")
+        log(f"The restored prefix was not executable; it is stored at {failed}.")
         if displaced and displaced.exists():
             displaced.rename(PREFIX)
 
     if PREFIX.exists():
         backup = move_prefix_aside("broken")
-        log(f"Unvollständiger Wine-Prefix wurde nach {backup} verschoben.")
+        log(f"Moved the incomplete Wine prefix to {backup}.")
 
     for attempt in (1, 2):
         PREFIX.mkdir(parents=True, exist_ok=True)
-        log(f"Wine-Prefix wird neu erzeugt (Versuch {attempt}/2, Timeout {timeout}s).")
+        log(f"Creating a new Wine prefix (attempt {attempt}/2, timeout {timeout}s).")
         status = wineboot("--init", timeout, attempt)
         if status == 0 and wait_for_prefix(60):
-            log("Wine-Prefix wurde erfolgreich verifiziert.")
+            log("The Wine prefix was verified successfully.")
             return
         failed = move_prefix_aside(f"failed-init-{attempt}")
         log(
-            f"Wine-Prefix-Versuch {attempt}/2 endete mit Status {status}; "
-            f"siehe {LOG_DIR / f'wineboot-{attempt}.log'}. Daten liegen unter {failed}."
+            f"Wine prefix attempt {attempt}/2 exited with status {status}; "
+            f"see {LOG_DIR / f'wineboot-{attempt}.log'}. Data is stored at {failed}."
         )
 
-    raise RuntimeError("Wine-Prefix konnte nach zwei Versuchen nicht funktionsfähig angelegt werden")
+    raise RuntimeError("The Wine prefix could not be created successfully after two attempts")
 
 
 def configure_headless_wine() -> None:
     if env("WINE_AUDIO_MODE", "disabled").lower() != "disabled":
-        log(f"Wine-Audio bleibt aktiviert ({env('WINE_AUDIO_MODE')}).")
+        log(f"Wine audio remains enabled ({env('WINE_AUDIO_MODE')}).")
         return
     marker = PREFIX / ".fs25-headless-audio-disabled"
     if marker.exists():
@@ -212,7 +212,7 @@ def configure_headless_wine() -> None:
         )
         marker.touch()
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
-        log("Wine-Audio konnte nicht dauerhaft deaktiviert werden; Start wird fortgesetzt.")
+        log("Wine audio could not be disabled permanently; startup will continue.")
 
 
 def link_persistent(source: pathlib.Path, target: pathlib.Path) -> None:
@@ -244,9 +244,9 @@ def validated_port(name: str, default: int) -> str:
     try:
         number = int(raw)
     except ValueError as exc:
-        raise RuntimeError(f"{name} muss eine Zahl sein: {raw}") from exc
+        raise RuntimeError(f"{name} must be a number: {raw}") from exc
     if number < 1024 or number > 65535:
-        raise RuntimeError(f"{name} muss zwischen 1024 und 65535 liegen: {number}")
+        raise RuntimeError(f"{name} must be between 1024 and 65535: {number}")
     return str(number)
 
 
@@ -275,7 +275,7 @@ def configure() -> None:
     web_port = validated_port("WEB_PORT", 7999)
     game_port = validated_port("SERVER_PORT", 10823)
     if web_port == game_port:
-        raise RuntimeError("WEB_PORT und SERVER_PORT müssen verschieden sein")
+        raise RuntimeError("WEB_PORT and SERVER_PORT must be different")
 
     server_path = GAME_DIR / "dedicatedServer.xml"
     server = load_or_create(server_path, "server")
@@ -318,7 +318,7 @@ def configure() -> None:
     for key, value in values.items():
         child(settings, key).text = value
     atomic_xml(config_path, gameserver)
-    log(f"Konfiguration geschrieben: web={web_port} game={game_port} map={values['mapID']}")
+    log(f"Configuration written: web={web_port} game={game_port} map={values['mapID']}")
 
 
 def write_desktop_file(name: str, title: str, command: str, icon: str) -> None:
@@ -337,12 +337,12 @@ def write_desktop_file(name: str, title: str, command: str, icon: str) -> None:
 
 def create_desktop_shortcuts() -> None:
     ensure_directories()
-    write_desktop_file("fs25-install.desktop", "FS25 installieren / aktivieren", "/opt/fs25/fs25ctl.py install", "system-software-install")
-    write_desktop_file("fs25-server.desktop", "FS25 Webserver starten", "/opt/fs25/fs25ctl.py start-webserver", "applications-games")
-    write_desktop_file("fs25-dlcs.desktop", "FS25 DLCs installieren", "/opt/fs25/fs25ctl.py install-dlcs", "system-software-install")
+    write_desktop_file("fs25-install.desktop", "Install / activate FS25", "/opt/fs25/fs25ctl.py install", "system-software-install")
+    write_desktop_file("fs25-server.desktop", "Start FS25 web server", "/opt/fs25/fs25ctl.py start-webserver", "applications-games")
+    write_desktop_file("fs25-dlcs.desktop", "Install FS25 DLCs", "/opt/fs25/fs25ctl.py install-dlcs", "system-software-install")
     path = DESKTOP_DIR / "fs25-web.desktop"
     path.write_text(
-        "[Desktop Entry]\nType=Application\nName=GIANTS Webinterface öffnen\n"
+        "[Desktop Entry]\nType=Application\nName=Open GIANTS Web Interface\n"
         f"Exec=firefox-esr http://127.0.0.1:{validated_port('WEB_PORT', 7999)}/\n"
         "Terminal=false\nIcon=web-browser\n",
         encoding="utf-8",
@@ -368,7 +368,7 @@ def archive_command(archive: pathlib.Path, output: pathlib.Path) -> list[str]:
     bsdtar = shutil.which("bsdtar")
     if bsdtar:
         return [bsdtar, "-xf", str(archive), "-C", str(output)]
-    raise RuntimeError("Kein Archivprogramm vorhanden (7z/7zz/7za/bsdtar)")
+    raise RuntimeError("No archive tool is available (7z/7zz/7za/bsdtar)")
 
 
 def find_installer() -> pathlib.Path | None:
@@ -389,7 +389,7 @@ def run_logged(
     process_env: dict[str, str] | None = None,
 ) -> int:
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    log("Ausführen: " + " ".join(args))
+    log("Executing: " + " ".join(args))
     with log_path.open("w", encoding="utf-8", errors="replace") as output:
         process = subprocess.Popen(
             args,
@@ -413,7 +413,7 @@ def run_logged(
             try:
                 process.wait(timeout=min(progress_interval, timeout - elapsed))
             except subprocess.TimeoutExpired:
-                log(f"Prozess läuft seit {int(time.monotonic() - started)}s; Log: {log_path}")
+                log(f"Process has been running for {int(time.monotonic() - started)}s; log: {log_path}")
         return process.returncode
 
 
@@ -436,7 +436,7 @@ def create_slice_aliases(installer: pathlib.Path) -> None:
                 alias.symlink_to(item.name)
         count += 1
     if count:
-        log(f"{count} Installer-Slices sind unter den erwarteten Namen verfügbar.")
+        log(f"{count} installer slices are available under the expected names.")
 
 
 def install() -> None:
@@ -445,7 +445,7 @@ def install() -> None:
     available_gib = shutil.disk_usage(HOME).free // (1024 ** 3)
     if not (GAME_EXE.is_file() and SERVER_EXE.is_file()) and available_gib < required_gib:
         raise RuntimeError(
-            f"Nicht genug freier Speicher: {required_gib} GiB benötigt, {available_gib} GiB verfügbar"
+            f"Not enough free disk space: {required_gib} GiB required, {available_gib} GiB available"
         )
     installer = find_installer()
     if not (GAME_EXE.is_file() and SERVER_EXE.is_file()) and installer is None:
@@ -457,13 +457,13 @@ def install() -> None:
             extracted = INSTALLER_DIR / "extracted"
             if extracted.exists():
                 shutil.rmtree(extracted)
-            log(f"Entpacke {archives[0].name} ...")
+            log(f"Extracting {archives[0].name} ...")
             run_checked(archive_command(archives[0], extracted))
             installer = find_installer()
 
     if not (GAME_EXE.is_file() and SERVER_EXE.is_file()):
         if installer is None:
-            raise RuntimeError(f"Kein Setup in {INSTALLER_DIR} gefunden")
+            raise RuntimeError(f"No setup executable was found in {INSTALLER_DIR}")
         create_slice_aliases(installer)
         args = ["wine", str(installer)]
         if env("INSTALL_MODE", "silent") == "silent":
@@ -476,11 +476,11 @@ def install() -> None:
             int(env("INSTALL_PROGRESS_INTERVAL", "30")),
         )
         if status != 0:
-            raise RuntimeError(f"FS25-Installer endete mit Status {status}")
+            raise RuntimeError(f"The FS25 installer exited with status {status}")
 
     if not (GAME_EXE.is_file() and SERVER_EXE.is_file()):
-        raise RuntimeError("Installation ist unvollständig: Spiel- oder Serverprogramm fehlt")
-    log("Installation verifiziert.")
+        raise RuntimeError("The installation is incomplete: the game or server executable is missing")
+    log("Installation verified.")
 
     if true_value(env("ACTIVATE_AFTER_INSTALL", "true")):
         status = run_logged(
@@ -490,14 +490,15 @@ def install() -> None:
             GAME_DIR,
         )
         if status not in {0, 124}:
-            raise RuntimeError(f"Aktivierung endete mit Status {status}")
+            raise RuntimeError(f"Activation exited with status {status}")
         if status == 124:
-            log("Aktivierungszeitraum ist abgelaufen; der Prozess wurde beendet.")
+            log("The activation timeout was reached; the process was stopped.")
 
     configure()
     if true_value(env("AUTO_INSTALL_DLC", "false")):
         install_dlcs()
-    log("Einrichtung abgeschlossen.")
+    log("Setup completed.")
+    log("Installation files in /home/container/installer can now be deleted to free disk space.")
 
 
 def dlc_name(path: pathlib.Path) -> str:
@@ -517,7 +518,7 @@ def install_dlcs() -> None:
             continue
         target = extracted_root / archive.stem
         if not target.exists():
-            log(f"Entpacke DLC-Archiv {archive.name} ...")
+            log(f"Extracting DLC archive {archive.name} ...")
             run_checked(archive_command(archive, target))
 
     installers = sorted(
@@ -525,15 +526,15 @@ def install_dlcs() -> None:
         key=lambda path: path.name.lower(),
     )
     if not installers:
-        log(f"Keine DLC-Installer in {DLC_DIR} gefunden.")
+        log(f"No DLC installers were found in {DLC_DIR}.")
         return
 
     failures = 0
-    log(f"Verarbeite {len(installers)} DLC-Installer nacheinander.")
+    log(f"Processing {len(installers)} DLC installers sequentially.")
     for installer in installers:
         name = dlc_name(installer)
         if (PDLC_DIR / f"{name}.dlc").is_file():
-            log(f"{name} ist bereits installiert; überspringe {installer.name}.")
+            log(f"{name} is already installed; skipping {installer.name}.")
             continue
         status = run_logged(
             ["wine", str(installer)],
@@ -543,10 +544,10 @@ def install_dlcs() -> None:
         )
         if status != 0:
             failures += 1
-            log(f"DLC {name} endete mit Status {status}.")
+            log(f"DLC {name} exited with status {status}.")
     if failures:
-        raise RuntimeError(f"{failures} DLC-Installation(en) sind fehlgeschlagen")
-    log("Alle gefundenen DLC-Installer wurden verarbeitet.")
+        raise RuntimeError(f"{failures} DLC installation(s) failed")
+    log("All detected DLC installers have been processed.")
 
 
 WEB_PATCH_BEGIN = "/* === FS25 PELICAN HOST PATCH BEGIN === */"
@@ -591,7 +592,7 @@ def patch_web() -> None:
 /* === FS25 PELICAN HOST PATCH END === */
 '''
         frontend.write_text(content + "\n" + patch, encoding="utf-8")
-        log("Webinterface-Hostkorrektur ist aktiv.")
+        log("The Web Interface host correction is active.")
 
     imports = {
         GAME_DIR / "web_data/css/grid.css": 'https://cdn.jsdelivr.net/gh/yellowfromseegg/FS25-Webinterface-DarkMode@main/dark-theme-grid.css',
@@ -613,7 +614,7 @@ def patch_web() -> None:
 def start_webserver() -> None:
     prepare()
     if not SERVER_EXE.is_file():
-        raise RuntimeError("dedicatedServer.exe fehlt; FS25 muss zuerst installiert werden")
+        raise RuntimeError("dedicatedServer.exe is missing; FS25 must be installed first")
     patch_web()
     os.chdir(GAME_DIR)
     os.execvp("wine", ["wine", str(SERVER_EXE)])
@@ -642,7 +643,7 @@ def autostart_game() -> None:
             break
         time.sleep(2)
     if not base:
-        raise RuntimeError("GIANTS-Webinterface wurde nicht rechtzeitig erreichbar")
+        raise RuntimeError("The GIANTS Web Interface did not become reachable in time")
 
     cookies = http.cookiejar.CookieJar()
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookies))
@@ -669,13 +670,13 @@ def autostart_game() -> None:
                 params[name] = select.group(1)
     missing = [name for name in expected if name not in params]
     if missing:
-        raise RuntimeError("Startformular ist unvollständig: " + ", ".join(missing))
+        raise RuntimeError("The start form is incomplete: " + ", ".join(missing))
     if re.search(r'name="crossplay_allowed"[^>]+checked', html, re.I):
         params["crossplay_allowed"] = "on"
     params["start_server"] = "Start"
     with opener.open(base, urllib.parse.urlencode(params).encode(), timeout=30) as response:
         response.read()
-    log("Spielserver wurde über das GIANTS-Webinterface gestartet.")
+    log("The game server was started through the GIANTS Web Interface.")
 
 
 def main() -> int:
@@ -697,7 +698,7 @@ def main() -> int:
         }[args.command]()
         return 0
     except Exception as exc:
-        log(f"FEHLER: {exc}")
+        log(f"ERROR: {exc}")
         return 1
 
 

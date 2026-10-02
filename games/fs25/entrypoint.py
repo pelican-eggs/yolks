@@ -34,16 +34,18 @@ def log_access_addresses(public_host: str, novnc_port: str) -> None:
     game_port = os.environ.get("SERVER_PORT", "10823")
 
     log("======================================================================")
-    log("                    ZUGRIFFSADRESSEN")
+    log("                     ACCESS ADDRESSES")
     log("----------------------------------------------------------------------")
     log("  noVNC (Desktop / Installation):")
     log(f"  >>> {novnc_url}")
     log("----------------------------------------------------------------------")
-    log("  GIANTS-Webinterface:")
+    log("  GIANTS Web Interface:")
     log(f"  >>> {web_url}")
     log("----------------------------------------------------------------------")
-    log(f"  Spielport: {game_port}/tcp+udp")
+    log(f"  Game port: {game_port}/tcp+udp")
     log("======================================================================")
+    log("FIRST-START NOTE: Starting the game server from the GIANTS Web Interface")
+    log("can take several minutes the first time. Later starts are faster.")
 
 
 def find_installation_media() -> list[pathlib.Path]:
@@ -68,18 +70,18 @@ def handle_incomplete_installation() -> None:
     auto_install = os.environ.get("AUTO_INSTALL", "false").lower() == "true"
     if media:
         media_path = "/home/container/" + media[0].relative_to(HOME).as_posix()
-        log(f"Installationsmedium erkannt: {media_path}")
-        log("FS25-Installation ist noch nicht vollständig abgeschlossen.")
+        log(f"Installation media detected: {media_path}")
+        log("The FS25 installation has not completed yet.")
     else:
-        log("Noch kein Installationsmedium erkannt. Datei nach /home/container/installer hochladen.")
+        log("No installation media detected. Upload a file to /home/container/installer.")
 
     if auto_install and media:
-        log("Automatische Installation wird gestartet. Fortschritt: /home/container/logs/automatic-install.log")
+        log("Starting automatic installation. Progress: /home/container/logs/automatic-install.log")
         spawn([CONTROL, "install"], "automatic-install.log")
     elif media:
-        log('Installation über noVNC mit "FS25 installieren / aktivieren" starten oder beobachten.')
+        log('Start or monitor the installation in noVNC with "Install / activate FS25".')
     elif auto_install:
-        log("AUTO_INSTALL ist aktiv. Nach dem Upload den Server neu starten.")
+        log("AUTO_INSTALL is enabled. Restart the server after uploading the installer.")
 
 
 def spawn(args: list[str], log_name: str | None = None) -> subprocess.Popen:
@@ -124,7 +126,7 @@ def find_novnc_webroot() -> str:
     for candidate in ("/usr/share/novnc", "/usr/share/webapps/novnc"):
         if pathlib.Path(candidate).is_dir():
             return candidate
-    raise RuntimeError("noVNC-Webverzeichnis wurde nicht gefunden")
+    raise RuntimeError("noVNC web directory was not found")
 
 
 def start_xvnc() -> subprocess.Popen:
@@ -152,11 +154,11 @@ def start_xvnc() -> subprocess.Popen:
     process = spawn(command, "xvnc.log")
     for _ in range(30):
         if process.poll() is not None:
-            raise RuntimeError("Xvnc wurde vorzeitig beendet; siehe logs/xvnc.log")
+            raise RuntimeError("Xvnc exited early; see logs/xvnc.log")
         if subprocess.run(["xdpyinfo"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
             return process
         time.sleep(1)
-    raise RuntimeError("Xvnc wurde nicht rechtzeitig bereit")
+    raise RuntimeError("Xvnc did not become ready in time")
 
 
 def start_desktop() -> None:
@@ -199,7 +201,7 @@ def startup_command() -> list[str]:
     startup = re.sub(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}", lambda match: os.environ.get(match.group(1), ""), startup)
     command = shlex.split(startup)
     if not command:
-        raise RuntimeError("STARTUP ist leer")
+        raise RuntimeError("STARTUP is empty")
     return command
 
 
@@ -234,20 +236,23 @@ def main() -> int:
         handle_incomplete_installation()
         return xvnc.wait()
 
+    if find_installation_media():
+        log("Installation is complete. Files in /home/container/installer can be deleted to free disk space.")
+
     if os.environ.get("AUTO_INSTALL_DLC", "false").lower() == "true":
         subprocess.run([CONTROL, "install-dlcs"], check=True)
 
     mode = os.environ.get("AUTOSTART_SERVER", "web_only").lower()
     if mode == "false":
-        log("Installation erkannt. Webserver kann über den Desktop gestartet werden.")
+        log("Installation detected. The web server can be started from the desktop.")
         return xvnc.wait()
     if mode not in {"true", "web_only"}:
-        raise RuntimeError(f"Ungültiger AUTOSTART_SERVER-Wert: {mode}")
+        raise RuntimeError(f"Invalid AUTOSTART_SERVER value: {mode}")
 
     subprocess.run([CONTROL, "configure"], check=True)
     subprocess.run([CONTROL, "patch-web"], check=True)
     command = startup_command()
-    log("Startbefehl: " + " ".join(command))
+    log("Startup command: " + " ".join(command))
     server = spawn(command, "dedicated-server.log")
     if mode == "true":
         spawn([CONTROL, "autostart-game"], "autostart-game.log")
@@ -258,7 +263,7 @@ if __name__ == "__main__":
     try:
         raise SystemExit(main())
     except Exception as exc:
-        log(f"FEHLER: {exc}")
+        log(f"ERROR: {exc}")
         stop_children()
         raise SystemExit(1)
     finally:
