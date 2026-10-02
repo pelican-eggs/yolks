@@ -70,20 +70,25 @@ def run_checked(args: list[str], timeout: int | None = None) -> subprocess.Compl
     return subprocess.run(args, text=True, timeout=timeout, check=True)
 
 
-def prefix_files_exist() -> bool:
+def prefix_files_exist(prefix: pathlib.Path = PREFIX) -> bool:
+    """Check prefix state without assuming distro-provided DLL locations."""
     return (
-        (PREFIX / "system.reg").is_file()
-        and (PREFIX / "drive_c/windows/system32/kernel32.dll").is_file()
-        and (PREFIX / "drive_c/windows/system32/cmd.exe").is_file()
+        (prefix / "system.reg").stat().st_size > 0
+        and (prefix / "user.reg").stat().st_size > 0
+        and (prefix / "drive_c/windows/system32").is_dir()
     )
 
 
 def prefix_runs() -> bool:
-    if not prefix_files_exist():
+    try:
+        files_exist = prefix_files_exist()
+    except OSError:
+        files_exist = False
+    if not files_exist:
         return False
     try:
         result = subprocess.run(
-            ["wine", "cmd", "/d", "/c", "exit 0"],
+            ["wine", "cmd", "/d", "/s", "/c", "ver"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             timeout=int(env("WINECHECK_TIMEOUT", "45")),
@@ -93,30 +98,102 @@ def prefix_runs() -> bool:
         return False
 
 
+def wait_for_prefix(seconds: int = 60) -> bool:
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline:
+        if prefix_runs():
+            return True
+        time.sleep(2)
+    return False
+
+
+def move_prefix_aside(label: str) -> pathlib.Path | None:
+    if not PREFIX.exists():
+        return None
+    subprocess.run(["wineserver", "-k"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    destination = PREFIX.with_name(f"{PREFIX.name}.{label}-{timestamp}")
+    counter = 1
+    while destination.exists():
+        destination = PREFIX.with_name(f"{PREFIX.name}.{label}-{timestamp}-{counter}")
+        counter += 1
+    PREFIX.rename(destination)
+    return destination
+
+
+def wineboot(mode: str, timeout: int, attempt: int) -> int:
+    boot_env = os.environ.copy()
+    boot_env["WINEDEBUG"] = "err+all,warn+all"
+    return run_logged(
+        ["wineboot", mode],
+        LOG_DIR / f"wineboot-{attempt}.log",
+        timeout,
+        process_env=boot_env,
+        progress_interval=15,
+    )
+
+
 def ensure_prefix() -> None:
     ensure_directories()
-    if prefix_runs():
+    if wait_for_prefix(6):
         log("Wine-Prefix ist vollständig und ausführbar.")
         return
 
+    timeout = int(env("WINEBOOT_TIMEOUT", "180"))
+    try:
+        layout_exists = prefix_files_exist()
+    except OSError:
+        layout_exists = False
+
+    if layout_exists:
+        log("Vorhandener Wine-Prefix wird für Wine 11 aktualisiert.")
+        status = wineboot("--update", timeout, 0)
+        if status == 0 and wait_for_prefix(60):
+            log("Vorhandener Wine-Prefix wurde erfolgreich aktualisiert.")
+            return
+        log(f"Aktualisierung des vorhandenen Prefix fehlgeschlagen (Status {status}).")
+
+    # Older image revisions expected built-in Wine DLLs inside drive_c and
+    # could therefore move a healthy prefix aside. Prefer restoring the newest
+    # usable candidate so activation data is retained.
+    candidates = sorted(HOME.glob(f"{PREFIX.name}.broken-*"), reverse=True)
+    for candidate in candidates:
+        try:
+            usable_layout = prefix_files_exist(candidate)
+        except OSError:
+            usable_layout = False
+        if not usable_layout:
+            continue
+        displaced = move_prefix_aside("failed-current")
+        candidate.rename(PREFIX)
+        log(f"Vorheriger Wine-Prefix wurde aus {candidate} wiederhergestellt.")
+        status = wineboot("--update", timeout, 0)
+        if status == 0 and wait_for_prefix(60):
+            log("Wiederhergestellter Wine-Prefix ist ausführbar.")
+            return
+        failed = move_prefix_aside("failed-recovery")
+        log(f"Wiederherstellung war nicht ausführbar; Prefix liegt unter {failed}.")
+        if displaced and displaced.exists():
+            displaced.rename(PREFIX)
+
     if PREFIX.exists():
-        subprocess.run(["wineserver", "-k"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        backup = PREFIX.with_name(PREFIX.name + time.strftime(".broken-%Y%m%d-%H%M%S"))
-        PREFIX.rename(backup)
+        backup = move_prefix_aside("broken")
         log(f"Unvollständiger Wine-Prefix wurde nach {backup} verschoben.")
 
-    PREFIX.mkdir(parents=True, exist_ok=True)
-    timeout = int(env("WINEBOOT_TIMEOUT", "180"))
-    log(f"Wine-Prefix wird neu erzeugt (Timeout {timeout}s).")
-    try:
-        run_checked(["wineboot", "--init"], timeout=timeout)
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
-        log(f"wineboot wurde nicht regulär beendet: {exc}")
-        subprocess.run(["wineserver", "-k"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    for attempt in (1, 2):
+        PREFIX.mkdir(parents=True, exist_ok=True)
+        log(f"Wine-Prefix wird neu erzeugt (Versuch {attempt}/2, Timeout {timeout}s).")
+        status = wineboot("--init", timeout, attempt)
+        if status == 0 and wait_for_prefix(60):
+            log("Wine-Prefix wurde erfolgreich verifiziert.")
+            return
+        failed = move_prefix_aside(f"failed-init-{attempt}")
+        log(
+            f"Wine-Prefix-Versuch {attempt}/2 endete mit Status {status}; "
+            f"siehe {LOG_DIR / f'wineboot-{attempt}.log'}. Daten liegen unter {failed}."
+        )
 
-    if not prefix_runs():
-        raise RuntimeError("Wine-Prefix konnte nicht funktionsfähig angelegt werden")
-    log("Wine-Prefix wurde erfolgreich verifiziert.")
+    raise RuntimeError("Wine-Prefix konnte nach zwei Versuchen nicht funktionsfähig angelegt werden")
 
 
 def configure_headless_wine() -> None:
@@ -309,6 +386,7 @@ def run_logged(
     timeout: int,
     cwd: pathlib.Path | None = None,
     progress_interval: int = 30,
+    process_env: dict[str, str] | None = None,
 ) -> int:
     log_path.parent.mkdir(parents=True, exist_ok=True)
     log("Ausführen: " + " ".join(args))
@@ -316,6 +394,7 @@ def run_logged(
         process = subprocess.Popen(
             args,
             cwd=cwd,
+            env=process_env,
             stdout=output,
             stderr=subprocess.STDOUT,
             start_new_session=True,
