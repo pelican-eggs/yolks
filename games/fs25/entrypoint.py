@@ -27,6 +27,24 @@ def log(message: str) -> None:
     print(f"[FS25] {message}", flush=True)
 
 
+def log_access_addresses(public_host: str, novnc_port: str) -> None:
+    novnc_url = f"http://{public_host}:{novnc_port}/vnc.html?resize=remote&autoconnect=1"
+    web_url = f"http://{public_host}:{os.environ.get('WEB_PORT', '7999')}"
+    game_port = os.environ.get("SERVER_PORT", "10823")
+
+    log("======================================================================")
+    log("                    ZUGRIFFSADRESSEN")
+    log("----------------------------------------------------------------------")
+    log("  noVNC (Desktop / Installation):")
+    log(f"  >>> {novnc_url}")
+    log("----------------------------------------------------------------------")
+    log("  GIANTS-Webinterface:")
+    log(f"  >>> {web_url}")
+    log("----------------------------------------------------------------------")
+    log(f"  Spielport: {game_port}/tcp+udp")
+    log("======================================================================")
+
+
 def spawn(args: list[str], log_name: str | None = None) -> subprocess.Popen:
     target = None
     if log_name:
@@ -172,9 +190,7 @@ def main() -> int:
     subprocess.run([CONTROL, "prepare"], check=True)
 
     public_host = os.environ.get("PUBLIC_IP") or os.environ.get("SERVER_IP") or "SERVER-IP"
-    log(f"noVNC: http://{public_host}:{novnc_port}/vnc.html?resize=remote&autoconnect=1")
-    log(f"GIANTS-Webinterface: http://{public_host}:{os.environ.get('WEB_PORT', '7999')}")
-    log(f"Spielport: {os.environ.get('SERVER_PORT', '10823')}/tcp+udp")
+    log_access_addresses(public_host, novnc_port)
     log("FS25 image ready.")
 
     if not SERVER_EXE.is_file():
