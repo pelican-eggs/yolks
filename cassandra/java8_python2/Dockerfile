@@ -2,7 +2,7 @@ FROM        --platform=$TARGETOS/$TARGETARCH adoptopenjdk/openjdk8:alpine-jre
 
 LABEL       author="Pascal Zarrad" maintainer="p.zarrad@outlook.de"
 
-LABEL       org.opencontainers.image.source="https://github.com/pterodactyl/yolks"
+LABEL       org.opencontainers.image.source="https://github.com/pelican-eggs/yolks"
 LABEL       org.opencontainers.image.licenses=MIT
 
 RUN         apk add --update --no-cache python2 ca-certificates curl fontconfig git openssl sqlite tar tzdata \
