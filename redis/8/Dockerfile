@@ -1,7 +1,7 @@
 # ----------------------------------
 # Environment: redis
 # ----------------------------------
-FROM    --platform=$TARGETOS/$TARGETARCH redis:8-bookworm
+FROM    --platform=$TARGETOS/$TARGETARCH redis:8-trixie
 
 ENV     DEBIAN_FRONTEND=noninteractive
 
