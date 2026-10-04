@@ -12,13 +12,11 @@ RUN             dpkg --add-architecture i386 \
                 && apt install -y --no-install-recommends \
                     gnupg2 \
                     tzdata \
-                    software-properties-common \
                     libntlm0 \
                     winbind \
                     xvfb \
                     xauth \
                     python3 \
-                    libncurses5:i386 \
                     libncurses6:i386 \
                     libsdl2-2.0-0 \
                     libsdl2-2.0-0:i386

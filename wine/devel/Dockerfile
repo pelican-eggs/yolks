@@ -12,13 +12,11 @@ RUN             dpkg --add-architecture i386 \
                 && apt install -y --no-install-recommends \
                     gnupg2 \
                     tzdata \
-                    software-properties-common \
                     libntlm0 \
                     winbind \
                     xvfb \
                     xauth \
                     python3 \
-                    libncurses5:i386 \
                     libncurses6:i386 \
                     libsdl2-2.0-0 \
                     libsdl2-2.0-0:i386
@@ -32,7 +30,7 @@ RUN             cd /tmp/ \
 # Install wine and with recommends
 RUN             mkdir -pm755 /etc/apt/keyrings
 RUN             wget -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key
-RUN             wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/debian/dists/bookworm/winehq-bookworm.sources
+RUN             wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/debian/dists/trixie/winehq-trixie.sources
 RUN             apt update
 RUN             apt install --install-recommends winehq-devel cabextract wine-binfmt -y
 
