@@ -45,6 +45,25 @@ the server's writable data directory.
 The first game-server start from the GIANTS Web Interface can take several
 minutes. This longer delay is expected only on the first start.
 
+## Configuration ownership
+
+The game and web ports are always synchronized with the Pelican allocations.
+All other optional server variables use the following rule:
+
+- an empty variable preserves the value saved in the GIANTS Web Interface;
+- a non-empty variable is an explicit panel override and is applied on every
+  container start.
+
+On a new installation the image creates the minimum configuration required by
+GIANTS. The initial web login is `admin` / `webpassword`; change it in the
+GIANTS Web Interface. Existing XML files are backed up as `*.xml.bak` before a
+changed version is written.
+
+Images published before this behavior used a one-year Web API interval. That
+generated value is migrated once to 60 seconds so connected-player data is
+updated in a useful time. Afterwards, the value selected in the GIANTS Web
+Interface is preserved.
+
 ## Persistent data
 
 ```text
@@ -55,8 +74,30 @@ Savegames:  /home/container/config/FarmingSimulator2025/savegameN
 DLC data:   /home/container/config/FarmingSimulator2025/pdlc
 Installers: /home/container/installer
 Logs:       /home/container/logs
+Game log:   /home/container/config/FarmingSimulator2025/log.txt
 ```
 
 Upload mod ZIP files without extracting them. To migrate a savegame, stop the
 server and copy the complete contents of the existing savegame into the target
 `savegameN` directory, where `N` matches `SAVEGAME_INDEX`.
+
+## Mod-map startup time
+
+FS25 validates every ZIP in the active `mods` directory before loading the map.
+Large maps also need additional time for map data, textures, shaders and the
+savegame. Keep only the map and its required dependencies in the active mod
+directory while diagnosing a slow start. Compare the first and second start
+with the same files; persistent configuration and Wine data are not deleted by
+the image between starts.
+
+Use `/home/container/config/FarmingSimulator2025/log.txt` to distinguish mod
+validation from map or savegame loading. Fix all `Error:` entries and test the
+same save with the built-in map before attributing a delay to the container.
+
+## Player status and pause-when-empty
+
+Set **Pause Game If Empty** in the GIANTS Web Interface and leave
+`SERVER_PAUSE` empty if GIANTS should manage it. `SERVER_STATS_INTERVAL`
+controls the Link XML/Web API refresh interval; it does not replace the game
+engine's disconnect timeout. The game allocation must be exposed as both TCP
+and UDP, and only one game process should be started for a server instance.

@@ -229,14 +229,20 @@ def link_persistent(source: pathlib.Path, target: pathlib.Path) -> None:
     target.symlink_to(source, target_is_directory=True)
 
 
-def atomic_xml(path: pathlib.Path, root: ET.Element) -> None:
+def atomic_xml(path: pathlib.Path, root: ET.Element) -> bool:
     path.parent.mkdir(parents=True, exist_ok=True)
     ET.indent(root, space="    ")
     with tempfile.NamedTemporaryFile("wb", dir=path.parent, delete=False) as handle:
         temp = pathlib.Path(handle.name)
         ET.ElementTree(root).write(handle, encoding="utf-8", xml_declaration=True)
     ET.parse(temp)
+    if path.is_file() and path.read_bytes() == temp.read_bytes():
+        temp.unlink()
+        return False
+    if path.is_file():
+        shutil.copy2(path, path.with_suffix(path.suffix + ".bak"))
     os.replace(temp, path)
+    return True
 
 
 def validated_port(name: str, default: int) -> str:
@@ -270,6 +276,43 @@ def child(parent: ET.Element, name: str, attributes: dict[str, str] | None = Non
     return found
 
 
+def optional_value(
+    parent: ET.Element,
+    element_name: str,
+    variable_name: str,
+    initial_default: str,
+) -> bool:
+    """Apply a non-empty panel override, otherwise preserve the XML value."""
+    current = parent.find(element_name)
+    configured = env(variable_name)
+    if configured.strip():
+        child(parent, element_name).text = configured
+        return True
+    if current is None:
+        child(parent, element_name).text = initial_default
+    return False
+
+
+def web_credentials() -> tuple[str, str]:
+    """Resolve credentials without requiring persistent panel overrides."""
+    configured_username = env("WEB_USERNAME")
+    configured_password = env("WEB_PASSWORD")
+    username = configured_username if configured_username.strip() else ""
+    password = configured_password if configured_password.strip() else ""
+    if username and password:
+        return username, password
+
+    server_path = GAME_DIR / "dedicatedServer.xml"
+    if server_path.is_file():
+        try:
+            server = ET.parse(server_path).getroot()
+            username = username or (server.findtext("./webserver/initial_admin/username") or "").strip()
+            password = password or (server.findtext("./webserver/initial_admin/passphrase") or "")
+        except (ET.ParseError, OSError):
+            pass
+    return username or "admin", password or "webpassword"
+
+
 def configure() -> None:
     ensure_directories()
     web_port = validated_port("WEB_PORT", 7999)
@@ -281,8 +324,11 @@ def configure() -> None:
     server = load_or_create(server_path, "server")
     web = child(server, "webserver", {"port": web_port})
     admin = child(web, "initial_admin")
-    child(admin, "username").text = env("WEB_USERNAME", "admin")
-    child(admin, "passphrase").text = env("WEB_PASSWORD", "webpassword")
+    managed = []
+    if optional_value(admin, "username", "WEB_USERNAME", "admin"):
+        managed.append("web username")
+    if optional_value(admin, "passphrase", "WEB_PASSWORD", "webpassword"):
+        managed.append("web password")
     child(
         server,
         "game",
@@ -300,25 +346,51 @@ def configure() -> None:
     requested_map = env("SERVER_MAP").strip()
     existing_map = (settings.findtext("mapID") or "").strip()
     existing_filename = (settings.findtext("mapFilename") or "").strip()
-    values = {
-        "game_name": env("SERVER_NAME", "FS25 Server"),
-        "admin_password": env("SERVER_ADMIN", "adminpassword"),
-        "game_password": env("SERVER_PASSWORD"),
-        "savegame_index": env("SAVEGAME_INDEX", "1"),
-        "max_player": env("SERVER_PLAYERS", "16"),
-        "port": game_port,
-        "language": env("SERVER_REGION", "de"),
-        "auto_save_interval": env("SERVER_SAVE_INTERVAL", "180.000000"),
-        "stats_interval": env("SERVER_STATS_INTERVAL", "31536000"),
-        "crossplay_allowed": env("SERVER_CROSSPLAY", "true"),
-        "pause_game_if_empty": env("SERVER_PAUSE", "2"),
-        "mapID": requested_map or existing_map or "MapUS",
-        "mapFilename": "default" if requested_map else (existing_filename or "default"),
+    optional_settings = {
+        "game_name": ("SERVER_NAME", "FS25 Server", "server name"),
+        "admin_password": ("SERVER_ADMIN", "adminpassword", "admin password"),
+        "game_password": ("SERVER_PASSWORD", "", "game password"),
+        "savegame_index": ("SAVEGAME_INDEX", "1", "savegame slot"),
+        "max_player": ("SERVER_PLAYERS", "16", "player limit"),
+        "language": ("SERVER_REGION", "en", "language"),
+        "auto_save_interval": ("SERVER_SAVE_INTERVAL", "180.000000", "autosave interval"),
+        "stats_interval": ("SERVER_STATS_INTERVAL", "60.000000", "Web API interval"),
+        "crossplay_allowed": ("SERVER_CROSSPLAY", "true", "crossplay"),
+        "pause_game_if_empty": ("SERVER_PAUSE", "2", "pause-when-empty"),
     }
-    for key, value in values.items():
-        child(settings, key).text = value
+    for key, (variable, default, label) in optional_settings.items():
+        if optional_value(settings, key, variable, default):
+            managed.append(label)
+
+    # Older image revisions forced a one-year Web API update interval. Migrate
+    # that generated value once so connected-player data refreshes promptly.
+    migration_marker = CONFIG_DIR / ".fs25-settings-v2"
+    stats = (settings.findtext("stats_interval") or "").strip()
+    if (
+        not migration_marker.exists()
+        and not env("SERVER_STATS_INTERVAL").strip()
+        and stats in {"31536000", "31536000.000000"}
+    ):
+        child(settings, "stats_interval").text = "60.000000"
+        log("Migrated the legacy Web API interval from one year to 60 seconds.")
+
+    child(settings, "port").text = game_port
+    if requested_map:
+        child(settings, "mapID").text = requested_map
+        if requested_map != existing_map:
+            child(settings, "mapFilename").text = "default"
+        managed.append("map")
+    else:
+        if not existing_map:
+            child(settings, "mapID").text = "MapUS"
+        if not existing_filename:
+            child(settings, "mapFilename").text = "default"
     atomic_xml(config_path, gameserver)
-    log(f"Configuration written: web={web_port} game={game_port} map={values['mapID']}")
+    migration_marker.touch(exist_ok=True)
+    selected_map = settings.findtext("mapID") or "MapUS"
+    overrides = ", ".join(managed) if managed else "none"
+    log(f"Configuration ready: web={web_port} game={game_port} map={selected_map}; panel overrides: {overrides}")
+    log("Empty optional panel variables preserve settings saved in the GIANTS Web Interface.")
 
 
 def write_desktop_file(name: str, title: str, command: str, icon: str) -> None:
@@ -620,7 +692,25 @@ def start_webserver() -> None:
     os.execvp("wine", ["wine", str(SERVER_EXE)])
 
 
+def game_server_running() -> bool:
+    """Return whether the GIANTS game process is already active."""
+    try:
+        result = subprocess.run(
+            ["pgrep", "-u", str(os.getuid()), "-f", r"FarmingSimulator2025(Game)?\.exe"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+        return result.returncode == 0
+    except OSError:
+        return False
+
+
 def autostart_game() -> None:
+    if game_server_running():
+        log("The game server is already running; the automatic start request was skipped.")
+        return
+
     port = int(validated_port("WEB_PORT", 7999))
     hosts = ["127.0.0.1"]
     try:
@@ -647,8 +737,9 @@ def autostart_game() -> None:
 
     cookies = http.cookiejar.CookieJar()
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookies))
+    username, password = web_credentials()
     login_data = urllib.parse.urlencode(
-        {"username": env("WEB_USERNAME", "admin"), "password": env("WEB_PASSWORD", "webpassword"), "login": "Login"}
+        {"username": username, "password": password, "login": "Login"}
     ).encode()
     with opener.open(base, login_data, timeout=15) as response:
         response.read()
@@ -673,6 +764,9 @@ def autostart_game() -> None:
         raise RuntimeError("The start form is incomplete: " + ", ".join(missing))
     if re.search(r'name="crossplay_allowed"[^>]+checked', html, re.I):
         params["crossplay_allowed"] = "on"
+    if game_server_running():
+        log("The game server started while the Web Interface was loading; no second start request was sent.")
+        return
     params["start_server"] = "Start"
     with opener.open(base, urllib.parse.urlencode(params).encode(), timeout=30) as response:
         response.read()
