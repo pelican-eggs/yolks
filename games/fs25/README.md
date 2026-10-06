@@ -42,8 +42,10 @@ the server's writable data directory.
 6. After a successful installation, delete the contents of
    `/home/container/installer` to reclaim disk space.
 
-The first game-server start from the GIANTS Web Interface can take several
-minutes. This longer delay is expected only on the first start.
+The GIANTS Web Interface and the actual game server have separate startup
+phases. `FS25 image ready.` only indicates container initialization. Large
+mod maps can take several minutes to load on any start, not only the first
+one. Wait until the game server is available before trying to join.
 
 ## Configuration ownership
 
@@ -83,16 +85,78 @@ server and copy the complete contents of the existing savegame into the target
 
 ## Mod-map startup time
 
-FS25 validates every ZIP in the active `mods` directory before loading the map.
-Large maps also need additional time for map data, textures, shaders and the
-savegame. Keep only the map and its required dependencies in the active mod
-directory while diagnosing a slow start. Compare the first and second start
-with the same files; persistent configuration and Wine data are not deleted by
-the image between starts.
+Measure from clicking **Start** in GIANTS until the game server is joinable,
+not until the Web Interface opens. Compare at least three runs using the same
+FS25 version, DLCs, mod ZIPs, selected map and a copy of the same savegame.
+Separate the first load from subsequent loads, and record the CPU model and
+storage used by the Windows and Linux systems. Six allocated CPU equivalents
+do not guarantee that a sequential loading stage can use all six at once.
 
-Use `/home/container/config/FarmingSimulator2025/log.txt` to distinguish mod
-validation from map or savegame loading. Fix all `Error:` entries and test the
-same save with the built-in map before attributing a delay to the container.
+The runtime launches `dedicatedServer.exe` from the game directory and applies
+the headless Wine environment before the first Wine process starts, including
+with an existing prefix. A low open-file soft limit is raised to at most
+65,536, never beyond the inherited hard limit. Existing higher limits remain
+unchanged. These changes remove runtime inconsistencies; they do not guarantee
+a particular loading-time reduction.
+
+### Capture an ongoing game load
+
+After pulling the updated image, start the game server in GIANTS. While its
+map is still loading, open **Terminal** in noVNC and run this manual command:
+
+```text
+/opt/fs25/fs25ctl.py diagnose --seconds 10
+```
+
+This command is part of the existing image controller, not an additional
+startup script. It runs only when invoked and does not prepare the prefix,
+rewrite configuration, restart Wine, or change mods, savegames or caches.
+It reports the Wine version, CPU affinity, CPU cgroup limits and counters
+before/after a bounded `pidstat` sample, process/thread CPU and disk I/O,
+game-process open-file limits/counts and the largest i3d loading times in the last
+256 KiB of `/home/container/config/FarmingSimulator2025/log.txt`.
+The log timings are historical and may precede the current sample. Run the
+command again if the game process starts after the initial PID lookup.
+
+Interpret the output alongside the complete game log:
+
+- A busy individual game thread can indicate a sequential CPU-bound stage.
+- A busy `wineserver` makes Wine synchronization a candidate for further tests;
+  it does not prove that synchronization is the only bottleneck.
+- Increasing CPU throttling counters show that the cgroup hit its quota.
+  They do not measure all forms of host CPU contention.
+- Disk reads, major faults and I/O delays help identify storage activity.
+  Zero disk reads can also mean files were served from the page cache; zero
+  I/O delay is inconclusive when the kernel does not collect delay accounting.
+- The displayed open-file limits belong to the sampled processes. Raising a
+  limit is useful only if that limit was constraining the workload.
+
+Wine 11 can use NTSync when built with support and provided with a compatible
+host driver and access to `/dev/ntsync`. Kernel support is included from Linux
+6.14 (or an appropriate distribution backport). Device accessibility alone
+does not prove that the installed Wine build uses it. An image or egg setting
+cannot by itself expose a host device through Wings. The image does not enable
+unverified ESYNC/FSYNC switches or change the host kernel.
+
+References: [Wine 11 release notes](https://github.com/wine-mirror/wine/blob/wine-11.0/ANNOUNCE.md),
+[Linux NTSync driver](https://docs.kernel.org/userspace-api/ntsync.html),
+[pidstat manual](https://man7.org/linux/man-pages/man1/pidstat.1.html).
+
+Keep the complete mod set for the initial Windows/Linux comparison. For later
+mod isolation, use a separate test copy and remove only optional mods after
+checking savegame dependencies. Use a new savegame for a built-in-map reference;
+do not change the map of an existing mod-map save. Review `Error:` entries in
+the game log. The image preserves persistent configuration, Wine data and game
+caches between starts and never extracts or preloads mod ZIPs during startup.
+
+### Validate and roll back an image change
+
+Before testing another Wine image, stop the container and back up the Wine
+prefix, configuration and savegame. Record the old image digest. After pulling
+the new image, test join/rejoin, save/load, normal stop/restart, noVNC, DLCs and
+retained GIANTS settings in addition to measuring map startup. If reverting a
+Wine upgrade, stop the container, select the old image and restore its matching
+prefix/configuration backup rather than using an upgraded prefix blindly.
 
 ## Player status and pause-when-empty
 

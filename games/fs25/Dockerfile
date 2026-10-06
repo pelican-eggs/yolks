@@ -16,6 +16,7 @@ RUN         apt update \
                 p7zip-full \
                 procps \
                 socat \
+                sysstat \
                 tigervnc-standalone-server \
                 tigervnc-tools \
                 websockify \

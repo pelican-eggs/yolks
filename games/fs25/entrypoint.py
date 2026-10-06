@@ -44,8 +44,9 @@ def log_access_addresses(public_host: str, novnc_port: str) -> None:
     log("----------------------------------------------------------------------")
     log(f"  Game port: {game_port}/tcp+udp")
     log("======================================================================")
-    log("FIRST-START NOTE: Starting the game server from the GIANTS Web Interface")
-    log("can take several minutes the first time. Later starts are faster.")
+    log("GAME-START NOTE: The Web Interface can be ready while the game server is still loading.")
+    log("Large mod maps can take several minutes on any start, not only the first one.")
+    log("For loading diagnostics, run /opt/fs25/fs25ctl.py diagnose in the noVNC terminal.")
 
 
 def find_installation_media() -> list[pathlib.Path]:
@@ -84,12 +85,23 @@ def handle_incomplete_installation() -> None:
         log("AUTO_INSTALL is enabled. Restart the server after uploading the installer.")
 
 
-def spawn(args: list[str], log_name: str | None = None) -> subprocess.Popen:
+def spawn(
+    args: list[str],
+    log_name: str | None = None,
+    *,
+    cwd: pathlib.Path | None = None,
+) -> subprocess.Popen:
     target = None
     if log_name:
         LOG_DIR.mkdir(parents=True, exist_ok=True)
         target = (LOG_DIR / log_name).open("a", encoding="utf-8", errors="replace")
-    process = subprocess.Popen(args, stdout=target, stderr=subprocess.STDOUT, start_new_session=True)
+    try:
+        process = subprocess.Popen(
+            args, cwd=cwd, stdout=target, stderr=subprocess.STDOUT, start_new_session=True,
+        )
+    finally:
+        if target is not None:
+            target.close()
     children.append(process)
     return process
 
@@ -218,6 +230,11 @@ def main() -> int:
             "XDG_RUNTIME_DIR": "/tmp/xdg-runtime-fs25",
         }
     )
+    # Apply these in the parent before Wine starts so the GIANTS game child
+    # inherits them, including when an existing prefix skips registry setup.
+    from fs25ctl import configure_runtime
+
+    configure_runtime()
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
         signal.signal(sig, signal_handler)
@@ -231,6 +248,7 @@ def main() -> int:
     public_host = os.environ.get("PUBLIC_IP") or os.environ.get("SERVER_IP") or "SERVER-IP"
     log_access_addresses(public_host, novnc_port)
     log("FS25 image ready.")
+    log("This is container readiness, not confirmation that the game map has finished loading.")
 
     if not SERVER_EXE.is_file():
         handle_incomplete_installation()
@@ -253,7 +271,13 @@ def main() -> int:
     subprocess.run([CONTROL, "patch-web"], check=True)
     command = startup_command()
     log("Startup command: " + " ".join(command))
-    server = spawn(command, "dedicated-server.log")
+    # Match the desktop launch for GIANTS without changing the working
+    # directory of unrelated custom startup commands.
+    game_command = any(
+        arg.replace("\\", "/").rsplit("/", 1)[-1].lower() == "dedicatedserver.exe"
+        for arg in command
+    )
+    server = spawn(command, "dedicated-server.log", cwd=GAME_DIR if game_command else None)
     if mode == "true":
         spawn([CONTROL, "autostart-game"], "autostart-game.log")
     return server.wait()

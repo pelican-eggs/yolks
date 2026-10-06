@@ -196,6 +196,30 @@ def ensure_prefix() -> None:
     raise RuntimeError("The Wine prefix could not be created successfully after two attempts")
 
 
+def configure_runtime() -> None:
+    """Set inherited Wine options and use the permitted open-file allowance."""
+    if env("WINE_AUDIO_MODE", "disabled").lower() == "disabled":
+        overrides = [part.strip() for part in env("WINEDLLOVERRIDES", "mscoree=d").split(";") if part.strip()]
+        for library in ("winealsa.drv", "winepulse.drv", "winedbg.exe"):
+            disabled = f"{library}=d"
+            if disabled not in overrides:
+                overrides.append(disabled)
+        os.environ["WINEDLLOVERRIDES"] = ";".join(overrides)
+
+    try:
+        import resource
+    except ImportError:
+        return
+    try:
+        soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+        target = 65536 if hard == resource.RLIM_INFINITY else min(65536, hard)
+        if soft != resource.RLIM_INFINITY and soft < target:
+            resource.setrlimit(resource.RLIMIT_NOFILE, (target, hard))
+            log(f"Open-file soft limit raised from {soft} to {target}; hard limit unchanged.")
+    except (OSError, ValueError) as exc:
+        log(f"Open-file limit unchanged: {exc}")
+
+
 def configure_headless_wine() -> None:
     if env("WINE_AUDIO_MODE", "disabled").lower() != "disabled":
         log(f"Wine audio remains enabled ({env('WINE_AUDIO_MODE')}).")
@@ -203,8 +227,6 @@ def configure_headless_wine() -> None:
     marker = PREFIX / ".fs25-headless-audio-disabled"
     if marker.exists():
         return
-    overrides = env("WINEDLLOVERRIDES", "mscoree=d")
-    os.environ["WINEDLLOVERRIDES"] = overrides + ";winealsa.drv=d;winepulse.drv=d;winedbg.exe=d"
     try:
         run_checked(
             ["wine", "reg", "add", r"HKCU\Software\Wine\Drivers", "/v", "Audio", "/t", "REG_SZ", "/d", "disabled", "/f"],
@@ -423,6 +445,7 @@ def create_desktop_shortcuts() -> None:
 
 
 def prepare() -> None:
+    configure_runtime()
     ensure_prefix()
     configure_headless_wine()
     link_persistent(GAME_DIR, WINE_GAME_DIR)
@@ -773,14 +796,170 @@ def autostart_game() -> None:
     log("The game server was started through the GIANTS Web Interface.")
 
 
+def cpu_cgroup(proc: pathlib.Path = pathlib.Path("/proc")) -> tuple[pathlib.Path | None, bool]:
+    """Locate this process's CPU cgroup, accounting for container namespaces."""
+    try:
+        memberships = (proc / "self/cgroup").read_text().splitlines()
+        mounts = (proc / "self/mountinfo").read_text().splitlines()
+    except OSError:
+        return None, False
+
+    def decode_mount_path(value: str) -> str:
+        return re.sub(r"\\([0-7]{3})", lambda match: chr(int(match.group(1), 8)), value)
+
+    for mount in mounts:
+        left, separator, right = mount.partition(" - ")
+        fields, filesystem = left.split(), right.split()
+        if not separator or len(fields) < 5 or len(filesystem) < 3:
+            continue
+        unified = filesystem[0] == "cgroup2"
+        if not unified and (filesystem[0] != "cgroup" or "cpu" not in filesystem[2].split(",")):
+            continue
+        mount_root = pathlib.PurePosixPath(decode_mount_path(fields[3]))
+        mount_path = pathlib.Path(decode_mount_path(fields[4]))
+        for membership in memberships:
+            parts = membership.split(":", 2)
+            if len(parts) != 3:
+                continue
+            if unified and (parts[0] != "0" or parts[1]):
+                continue
+            if not unified and "cpu" not in parts[1].split(","):
+                continue
+            group = pathlib.PurePosixPath(parts[2])
+            try:
+                relative = group.relative_to(mount_root)
+            except ValueError:
+                if group != pathlib.PurePosixPath("/"):
+                    continue
+                relative = pathlib.PurePosixPath(".")
+            if ".." in relative.parts:
+                continue
+            candidate = mount_path.joinpath(*relative.parts)
+            if (candidate / "cpu.stat").is_file():
+                return candidate, unified
+    return None, False
+
+
+def load_timings(path: pathlib.Path) -> list[tuple[float, str]]:
+    """Read a bounded log tail without rescanning or changing any mod files."""
+    try:
+        with path.open("rb") as source:
+            size = source.seek(0, os.SEEK_END)
+            source.seek(max(0, size - 262144))
+            lines = source.read(262144).decode("utf-8", errors="replace").splitlines()
+    except OSError:
+        return []
+    timings = []
+    for line in lines:
+        match = re.search(r"\(([0-9]+(?:\.[0-9]+)?) ms\)", line)
+        if match and ".i3d" in line.lower():
+            timings.append((float(match.group(1)), line))
+    return sorted(timings, key=lambda item: item[0], reverse=True)[:5]
+
+
+def diagnose(seconds: int = 5) -> None:
+    """Manually sample an ongoing game load; never prepare or reconfigure it."""
+    if not 1 <= seconds <= 30:
+        raise ValueError("Diagnostic sample duration must be between 1 and 30 seconds")
+    log("GAME-LOAD DIAGNOSTICS (read-only; run while the game server loads its map)")
+    try:
+        version = subprocess.run(["wine", "--version"], capture_output=True, text=True, timeout=5)
+        log(f"Wine version: {version.stdout.strip() or 'not reported'}")
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        log(f"Wine version not available: {exc}")
+    try:
+        import resource
+        soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+        log(f"Diagnostic process open-file limit: soft={soft} hard={hard}; see pidstat PIDs for game processes.")
+    except (ImportError, OSError, ValueError):
+        log("Open-file limit not available.")
+    if hasattr(os, "sched_getaffinity"):
+        try:
+            log("Allowed logical CPUs: " + ",".join(str(cpu) for cpu in sorted(os.sched_getaffinity(0))))
+        except OSError:
+            log("CPU affinity not available.")
+    try:
+        descriptor = os.open("/dev/ntsync", os.O_RDONLY | os.O_CLOEXEC)
+        os.close(descriptor)
+        log("NTSync device is accessible. This alone does not verify Wine build support or active use.")
+    except (OSError, AttributeError) as exc:
+        log(f"NTSync device not accessible: {exc}")
+
+    group, unified = cpu_cgroup()
+    def cpu_snapshot(label: str) -> None:
+        if group is None:
+            log(f"{label}: CPU cgroup not available; verify limits on the Wings node.")
+            return
+        files = ("cpu.max", "cpu.stat", "cpu.pressure", "cpuset.cpus.effective") if unified else (
+            "cpu.cfs_quota_us", "cpu.cfs_period_us", "cpu.stat", "cpuset.cpus",
+        )
+        for name in files:
+            try:
+                value = (group / name).read_text().strip().replace("\n", "; ")
+                log(f"{label} {name}: {value}")
+            except OSError:
+                continue
+
+    cpu_snapshot("BEFORE SAMPLE")
+    pattern = r"FarmingSimulator2025(Game)?\.exe|dedicatedServer\.exe|(^|/)wineserver(64)?(\s|$)"
+    try:
+        processes = subprocess.run(
+            ["pgrep", "-u", str(os.getuid()), "-f", pattern],
+            capture_output=True, text=True, timeout=5,
+        )
+        pids = [pid for pid in processes.stdout.split() if pid.isdigit()] if processes.returncode == 0 else []
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        log(f"Process lookup not available: {exc}")
+        pids = []
+    if not pids:
+        log("No FS25/Wine server process found. Start the game in GIANTS, then repeat this command.")
+    elif not (pidstat := shutil.which("pidstat")):
+        log("pidstat is missing. Pull the updated FS25 image to enable thread/CPU/I/O sampling.")
+    else:
+        for pid in pids:
+            try:
+                limits = (pathlib.Path("/proc") / pid / "limits").read_text().splitlines()
+                for line in limits:
+                    if line.startswith("Max open files"):
+                        log(f"PID {pid}: {line.strip()}")
+                        break
+                count = sum(1 for _ in (pathlib.Path("/proc") / pid / "fd").iterdir())
+                log(f"PID {pid}: {count} open file descriptors at sample start.")
+            except OSError:
+                continue
+        log(f"Sampling process and thread CPU, memory and disk I/O for {seconds}s; PIDs: {','.join(pids)}")
+        try:
+            sample = subprocess.run(
+                [pidstat, "-h", "-t", "-u", "-r", "-d", "-p", ",".join(pids), "1", str(seconds)],
+                env={**os.environ, "LC_ALL": "C", "S_COLORS": "never"},
+                timeout=seconds + 10,
+            )
+            if sample.returncode:
+                log(f"pidstat exited with status {sample.returncode}; a sampled process may have stopped.")
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            log(f"Process sample did not complete: {exc}")
+    cpu_snapshot("AFTER SAMPLE")
+    log("Largest i3d timings in the last 256 KiB of the game log (historical, not necessarily this sample):")
+    timings = load_timings(CONFIG_DIR / "log.txt")
+    for milliseconds, line in timings:
+        log(f"{milliseconds:.2f} ms: {line}")
+    if not timings:
+        log("No i3d timings found in the game-log tail.")
+    log("Diagnostics finished. No settings, mods, savegames, caches or Wine prefix were changed.")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "command",
-        choices=("prepare", "configure", "install", "install-dlcs", "patch-web", "start-webserver", "autostart-game"),
+        choices=("prepare", "configure", "install", "install-dlcs", "patch-web", "start-webserver", "autostart-game", "diagnose"),
     )
+    parser.add_argument("--seconds", type=int, default=5, help="Read-only diagnose sample duration (1-30 seconds).")
     args = parser.parse_args()
     try:
+        if args.command == "diagnose":
+            diagnose(args.seconds)
+            return 0
         {
             "prepare": prepare,
             "configure": configure,
