@@ -47,6 +47,23 @@ phases. `FS25 image ready.` only indicates container initialization. Large
 mod maps can take several minutes to load on any start, not only the first
 one. Wait until the game server is available before trying to join.
 
+## Terminal access
+
+Open **Terminal** on the noVNC desktop or select **Terminal** in the applications
+menu. The image uses XTerm with an interactive Bash shell. Each terminal opens
+its own window instead of depending on an existing D-Bus terminal process.
+**Alt+F2** opens the application finder; enter `xterm` to open another terminal.
+
+The image sets the XFCE default terminal and refreshes its terminal desktop/menu
+launchers before the desktop starts. Existing browser preferences are preserved;
+changed terminal preference files are backed up once with a `.bak` suffix.
+The installation, activation, web-server and DLC shortcuts also use XTerm and
+keep their window open after the command finishes so its output remains visible.
+
+Existing servers need a rebuilt image: pull the new image and restart the
+container. No egg reimport or game reinstallation is required. Mods, savegames,
+GIANTS settings and the Wine prefix are not changed by the terminal setup.
+
 ## Configuration ownership
 
 The game and web ports are always synchronized with the Pelican allocations.

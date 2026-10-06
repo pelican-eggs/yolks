@@ -415,13 +415,57 @@ def configure() -> None:
     log("Empty optional panel variables preserve settings saved in the GIANTS Web Interface.")
 
 
+def configure_terminal() -> None:
+    """Repair the desktop terminal before XFCE loads persistent preferences."""
+    helpers = HOME / ".config" / "xfce4" / "helpers.rc"
+    original = helpers.read_text(encoding="utf-8") if helpers.is_file() else ""
+    lines = original.splitlines(keepends=True)
+    # XFCE stores preferred helpers in the global group, not in a named section.
+    group_start = next(
+        (index for index, line in enumerate(lines) if line.strip().startswith("[")),
+        len(lines),
+    )
+    global_lines = [
+        line for line in lines[:group_start]
+        if not re.match(r"^\s*TerminalEmulator\s*=", line)
+    ]
+    if global_lines and not global_lines[-1].endswith("\n"):
+        global_lines[-1] += "\n"
+    helper_config = "".join(global_lines) + "TerminalEmulator=xterm\n" + "".join(lines[group_start:])
+    terminal = (
+        "[Desktop Entry]\nType=Application\nName=Terminal\n"
+        'Exec=/usr/bin/xterm -fa "DejaVu Sans Mono" -fs 11 -title "Terminal" -e /bin/bash\n'
+        "TryExec=/usr/bin/xterm\nTerminal=false\nStartupNotify=false\n"
+        f"Path={HOME}\n"
+        "Icon=utilities-terminal\nCategories=System;TerminalEmulator;\n"
+    )
+    # Override the existing XFCE menu item as well as its preferred helper.
+    # XTerm starts its own window and does not reuse a D-Bus terminal server.
+    for path, content, executable in (
+        (helpers, helper_config, False),
+        (DESKTOP_DIR / "fs25-terminal.desktop", terminal, True),
+        (HOME / ".local" / "share" / "applications" / "xfce4-terminal.desktop", terminal, True),
+    ):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        previous = path.read_text(encoding="utf-8") if path.is_file() else None
+        if previous != content:
+            backup = path.with_name(path.name + ".bak")
+            if previous is not None and not backup.exists():
+                shutil.copy2(path, backup)
+            path.write_text(content, encoding="utf-8")
+        if executable:
+            path.chmod(0o755)
+
+
 def write_desktop_file(name: str, title: str, command: str, icon: str) -> None:
     path = DESKTOP_DIR / name
     content = (
         "[Desktop Entry]\n"
         "Type=Application\n"
         f"Name={title}\n"
-        f"Exec=xfce4-terminal --hold --command=\"{command}\"\n"
+        f'Exec=/usr/bin/xterm -fa "DejaVu Sans Mono" -fs 11 -hold -e {command}\n'
+        "TryExec=/usr/bin/xterm\nStartupNotify=false\n"
+        f"Path={HOME}\n"
         "Terminal=false\n"
         f"Icon={icon}\n"
     )
@@ -431,6 +475,7 @@ def write_desktop_file(name: str, title: str, command: str, icon: str) -> None:
 
 def create_desktop_shortcuts() -> None:
     ensure_directories()
+    configure_terminal()
     write_desktop_file("fs25-install.desktop", "Install / activate FS25", "/opt/fs25/fs25ctl.py install", "system-software-install")
     write_desktop_file("fs25-server.desktop", "Start FS25 web server", "/opt/fs25/fs25ctl.py start-webserver", "applications-games")
     write_desktop_file("fs25-dlcs.desktop", "Install FS25 DLCs", "/opt/fs25/fs25ctl.py install-dlcs", "system-software-install")

@@ -223,6 +223,7 @@ def main() -> int:
             "HOME": str(HOME),
             "USER": "container",
             "LOGNAME": "container",
+            "SHELL": "/bin/bash",
             "WINEPREFIX": str(HOME / ".fs25server"),
             "WINEARCH": "win64",
             "WINEDEBUG": os.environ.get("WINEDEBUG", "-all"),
@@ -232,9 +233,10 @@ def main() -> int:
     )
     # Apply these in the parent before Wine starts so the GIANTS game child
     # inherits them, including when an existing prefix skips registry setup.
-    from fs25ctl import configure_runtime
+    from fs25ctl import configure_runtime, configure_terminal
 
     configure_runtime()
+    configure_terminal()
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
         signal.signal(sig, signal_handler)
