@@ -1,7 +1,8 @@
 # Farming Simulator 25
 
 Pelican/Pterodactyl runtime image for the Farming Simulator 25 dedicated
-server. The image contains Wine 11, an XFCE desktop, TigerVNC, noVNC and the
+server. The image contains a source-built Wine-Proton 11 runtime, WineHQ 11 as
+a compatibility option, an XFCE desktop, TigerVNC, noVNC and the
 runtime helpers needed for installation, activation and DLC installation.
 
 The container runs as the unprivileged `container` user. Persistent game data,
@@ -148,14 +149,69 @@ Interpret the output alongside the complete game log:
 - The displayed open-file limits belong to the sampled processes. Raising a
   limit is useful only if that limit was constraining the workload.
 
-Wine 11 can use NTSync when built with support and provided with a compatible
-host driver and access to `/dev/ntsync`. Kernel support is included from Linux
-6.14 (or an appropriate distribution backport). Device accessibility alone
-does not prove that the installed Wine build uses it. An image or egg setting
-cannot by itself expose a host device through Wings. The image does not enable
-unverified ESYNC/FSYNC switches or change the host kernel.
+### Portable Wine synchronization
+
+The default runtime is built from Valve's Wine-Proton 11 source at commit
+`dc26e61847081a1b5cb0733dc30feba6ee575482`. Wine 11's supported WoW64 mode
+runs both 64-bit and 32-bit Windows programs against the Pelican Wine 11 image's
+64-bit Debian libraries, retaining the existing `win64` prefix format. No Steam
+launcher, external image entrypoint or additional server startup script is used.
+The build checks prefix initialization and both Windows command interpreters
+as the unprivileged container user before publishing the image.
+
+In `auto` mode, the controller checks `futex_waitv` and usable shared memory
+inside an isolated child before any Wine process starts. A compatible container
+can use FSYNC without `/dev/ntsync`, privileged mode, a kernel upgrade or Wings
+changes. An unsupported or blocked syscall, failed probe or unavailable shared
+memory disables FSYNC instead of preventing startup. Wine can prefer NTSync
+when that device is already accessible; otherwise it uses eligible FSYNC or
+ordinary server-side synchronization. ESYNC is not part of this Wine branch.
+
+The console reports the selected runtime and FSYNC eligibility, not a claimed
+active backend. `diagnose` also inspects the current Wine/game process file
+descriptors. `FSYNC shared-memory descriptor observed` or `NTSync device
+descriptor observed` provides runtime evidence; missing/inaccessible descriptors
+are inconclusive. Old log messages and an environment flag alone are not proof.
+
+Existing servers do not need an egg reimport. To override the defaults, stop
+the container and create `/home/container/config/wine-runtime.json` in the
+Pelican file manager, then restart the container. For example:
+
+```json
+{"runtime": "proton", "sync": "auto"}
+```
+
+- `runtime`: `proton` (default) or `stable` (the existing WineHQ 11 runtime).
+- `sync`: `auto` (default), `fsync` (try FSYNC without NTSync, fall back if the
+  probe fails), or `server` (disable the accelerated backends in Wine-Proton).
+- Optional environment variables `FS25_WINE_RUNTIME` and `FS25_WINE_SYNC`
+  override the respective file values when non-empty.
+- Selection happens once per container lifetime and is inherited by desktop,
+  installer and GIANTS child processes. Editing the file requires a full
+  container restart, not only stopping/starting the game in GIANTS.
+
+For a controlled comparison, first test `proton`/`auto`, then `proton`/`server`
+with a container restart between them. This separates synchronization from the
+Wine build change. If a compatibility regression occurs, use `stable`/`server`
+with the prefix/configuration backup made before the runtime upgrade. Neither
+this runtime nor FSYNC guarantees Windows-equivalent mod-map loading times.
+
+### Wine source and license
+
+The image's controller is MIT-licensed. Wine is LGPL-2.1-or-later; the pinned
+upstream source archive, `COPYING.LIB`, `LICENSE` and `AUTHORS` are bundled in
+`/opt/fs25/wine-source`. The only source overlay is `VERSION.fs25`, also bundled
+there. It identifies this build as `11.0-fs25-proton-dc26e61`, distinct from
+WineHQ 11. Wine's normal prefix-update mechanism remains in use; the runtime
+selector does not reset activation or game settings. The Dockerfile pins the source commit,
+verifies the archive's SHA-256 and applies the version overlay before building.
+It also contains the configure/compiler
+options. Generic CPU targets are used, never `-march=native`. Development
+packages and intermediate objects remain in the build stage, not the final image.
 
 References: [Wine 11 release notes](https://github.com/wine-mirror/wine/blob/wine-11.0/ANNOUNCE.md),
+[pinned Wine-Proton source](https://github.com/ValveSoftware/wine/tree/dc26e61847081a1b5cb0733dc30feba6ee575482),
+[FSYNC implementation](https://github.com/ValveSoftware/wine/blob/dc26e61847081a1b5cb0733dc30feba6ee575482/server/fsync.c),
 [Linux NTSync driver](https://docs.kernel.org/userspace-api/ntsync.html),
 [pidstat manual](https://man7.org/linux/man-pages/man1/pidstat.1.html).
 

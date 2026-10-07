@@ -5,8 +5,10 @@ from __future__ import annotations
 
 import argparse
 import http.cookiejar
+import json
 import os
 import pathlib
+import platform
 import re
 import shutil
 import signal
@@ -36,6 +38,8 @@ WINE_CONFIG_DIR = (
     PREFIX / "drive_c" / "users" / os.environ.get("USER", "container")
     / "Documents" / "My Games" / "FarmingSimulator2025"
 )
+PROTON_DIR = pathlib.Path("/opt/fs25/wine")
+STABLE_DIR = pathlib.Path("/opt/wine-stable")
 
 
 def log(message: str) -> None:
@@ -196,8 +200,124 @@ def ensure_prefix() -> None:
     raise RuntimeError("The Wine prefix could not be created successfully after two attempts")
 
 
+def probe_fsync() -> tuple[bool, str]:
+    """Check the container, not the kernel version; isolate seccomp/SIGBUS failures."""
+    if sys.platform != "linux" or platform.machine().lower() not in {"x86_64", "amd64"}:
+        return False, "not Linux x86_64"
+    # No Wine process is started. A disposable child contains SIGSYS/SIGBUS,
+    # and the shared-memory test file is unlinked before it is mapped.
+    check = r'''
+import ctypes, errno, mmap, os, sys, tempfile
+try:
+    import resource
+    resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+except (ImportError, OSError, ValueError):
+    pass
+libc = ctypes.CDLL(None, use_errno=True)
+libc.syscall.restype = ctypes.c_long
+result = libc.syscall(ctypes.c_long(449), ctypes.c_void_p(), ctypes.c_uint(0),
+                      ctypes.c_uint(0), ctypes.c_void_p(), ctypes.c_int(0))
+error = ctypes.get_errno()
+if result != -1 or error != errno.EINVAL:
+    print("futex_waitv: " + os.strerror(error), flush=True)
+    sys.exit(1)
+try:
+    available = os.statvfs("/dev/shm")
+    if available.f_bavail * available.f_frsize < 4096:
+        raise OSError("/dev/shm has no free page")
+    with tempfile.TemporaryFile(dir="/dev/shm") as file:
+        file.truncate(4096)
+        with mmap.mmap(file.fileno(), 4096) as page:
+            page[0] = 1
+except OSError as exc:
+    print("shared memory: " + str(exc), flush=True)
+    sys.exit(1)
+print("futex_waitv and shared memory are available", flush=True)
+'''
+    try:
+        result = subprocess.run(
+            [sys.executable, "-c", check], capture_output=True, text=True, timeout=5,
+        )
+    except subprocess.TimeoutExpired:
+        return False, "probe timed out after 5 seconds"
+    except OSError as exc:
+        return False, f"probe did not complete: {exc}"
+    detail = result.stdout.strip() or f"probe exited with status {result.returncode}"
+    return result.returncode == 0, detail
+
+
+def select_wine_runtime() -> None:
+    """Select once in the parent; desktop and GIANTS children inherit the result."""
+    if env("_FS25_RUNTIME_READY") == "1":
+        return
+    settings = {}
+    path = HOME / "config" / "wine-runtime.json"
+    try:
+        if path.is_file():
+            settings = json.loads(path.read_text(encoding="utf-8-sig"))
+            if not isinstance(settings, dict):
+                raise ValueError("expected a JSON object")
+    except (OSError, ValueError) as exc:
+        log(f"Wine runtime settings ignored ({path}): {exc}")
+        settings = {}
+    runtime = str(env("FS25_WINE_RUNTIME").strip() or settings.get("runtime", "proton")).strip().lower()
+    mode = str(env("FS25_WINE_SYNC").strip() or settings.get("sync", "auto")).strip().lower()
+    if runtime not in {"proton", "stable"}:
+        log(f"Unknown Wine runtime {runtime!r}; using proton.")
+        runtime = "proton"
+    if mode not in {"auto", "fsync", "server"}:
+        log(f"Unknown Wine synchronization mode {mode!r}; using auto.")
+        mode = "auto"
+    directory = PROTON_DIR if runtime == "proton" else STABLE_DIR
+    if not all((directory / "bin" / name).is_file() for name in ("wine", "wineserver")):
+        if runtime == "proton":
+            log("Bundled Wine runtime missing; trying WineHQ stable.")
+            runtime, directory = "stable", STABLE_DIR
+        if not all((directory / "bin" / name).is_file() for name in ("wine", "wineserver")):
+            raise RuntimeError("Wine runtime is incomplete: wine or wineserver is missing")
+    fsync, reason = False, "server-side synchronization requested"
+    if runtime == "proton" and mode != "server":
+        fsync, reason = probe_fsync()
+    elif runtime == "stable":
+        reason = "WineHQ stable compatibility runtime"
+    bins = {str(PROTON_DIR / "bin"), str(STABLE_DIR / "bin")}
+    inherited = [part for part in env("PATH", os.defpath).split(os.pathsep) if part not in bins]
+    os.environ["PATH"] = os.pathsep.join([str(directory / "bin"), *inherited])
+    os.environ["WINESERVER"] = str(directory / "bin" / "wineserver")
+    # Never combine libraries/loaders belonging to different Wine builds.
+    for name in ("WINELOADER", "WINEDLLPATH"):
+        os.environ.pop(name, None)
+    os.environ["WINEFSYNC"] = "1" if fsync else "0"
+    os.environ["PROTON_NO_NTSYNC"] = "0" if runtime == "proton" and mode == "auto" else "1"
+    os.environ["FS25_SELECTED_WINE_RUNTIME"] = runtime
+    os.environ["_FS25_RUNTIME_READY"] = "1"
+    log(f"Wine runtime: {runtime}; synchronization mode: {mode}.")
+    log(f"FSYNC {'eligible' if fsync else 'disabled'}: {reason}.")
+    if runtime == "proton" and mode == "auto":
+        log("Wine may use NTSync if already accessible; otherwise FSYNC or server-side synchronization.")
+    log("Confirm the active backend with diagnose while the game server is loading.")
+
+
+def observed_wine_sync(pid: str, proc: pathlib.Path = pathlib.Path("/proc")) -> str:
+    """Inspect the current process descriptors, not an old log or a requested flag."""
+    try:
+        for descriptor in (proc / pid / "fd").iterdir():
+            try:
+                target = os.readlink(descriptor)
+            except OSError:
+                continue
+            if target == "/dev/ntsync":
+                return "NTSync device descriptor observed"
+            if re.fullmatch(r"/dev/shm/wine-[0-9a-f]+-fsync(?: \(deleted\))?", target):
+                return "FSYNC shared-memory descriptor observed"
+    except OSError:
+        return "synchronization descriptors not accessible"
+    return "no accelerated synchronization descriptor observed (not conclusive)"
+
+
 def configure_runtime() -> None:
     """Set inherited Wine options and use the permitted open-file allowance."""
+    select_wine_runtime()
     if env("WINE_AUDIO_MODE", "disabled").lower() == "disabled":
         overrides = [part.strip() for part in env("WINEDLLOVERRIDES", "mscoree=d").split(";") if part.strip()]
         for library in ("winealsa.drv", "winepulse.drv", "winedbg.exe"):
@@ -907,6 +1027,9 @@ def diagnose(seconds: int = 5) -> None:
     if not 1 <= seconds <= 30:
         raise ValueError("Diagnostic sample duration must be between 1 and 30 seconds")
     log("GAME-LOAD DIAGNOSTICS (read-only; run while the game server loads its map)")
+    log(f"Wine executable: {shutil.which('wine') or 'not found'}")
+    log(f"Inherited synchronization request: WINEFSYNC={env('WINEFSYNC', 'unset')} "
+        f"PROTON_NO_NTSYNC={env('PROTON_NO_NTSYNC', 'unset')} (not proof of active use)")
     try:
         version = subprocess.run(["wine", "--version"], capture_output=True, text=True, timeout=5)
         log(f"Wine version: {version.stdout.strip() or 'not reported'}")
@@ -958,9 +1081,11 @@ def diagnose(seconds: int = 5) -> None:
         pids = []
     if not pids:
         log("No FS25/Wine server process found. Start the game in GIANTS, then repeat this command.")
-    elif not (pidstat := shutil.which("pidstat")):
+    for pid in pids:
+        log(f"PID {pid}: {observed_wine_sync(pid)}")
+    if pids and not (pidstat := shutil.which("pidstat")):
         log("pidstat is missing. Pull the updated FS25 image to enable thread/CPU/I/O sampling.")
-    else:
+    elif pids:
         for pid in pids:
             try:
                 limits = (pathlib.Path("/proc") / pid / "limits").read_text().splitlines()
