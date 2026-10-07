@@ -9,11 +9,21 @@ ARG         WINE_BUILD_JOBS=2
 ADD         --checksum=sha256:a07652adb965e657837e8013ecb525303fc733555c78a5295a63d48b0ca9a120 \
             https://codeload.github.com/ValveSoftware/wine/tar.gz/dc26e61847081a1b5cb0733dc30feba6ee575482 \
             /opt/fs25/wine-source/valve-wine.tar.gz
+# Match VK_XML_VERSION in the pinned Wine generator; keep generation offline and reproducible.
+ADD         --checksum=sha256:5ebddf02358d937d8ce9bd997b20d2be9693e48320e1a060056c26b9cfe15438 \
+            https://raw.githubusercontent.com/KhronosGroup/Vulkan-Docs/v1.4.339/xml/vk.xml \
+            /opt/fs25/wine-source/vk.xml
+ADD         --checksum=sha256:4480ab87c8ee6d561376fa83820af1071f85ff7fa1a26b21f521717fa04d5809 \
+            https://raw.githubusercontent.com/KhronosGroup/Vulkan-Docs/v1.4.339/xml/video.xml \
+            /opt/fs25/wine-source/video.xml
+ADD         --checksum=sha256:8f25018489d6fe0dec34a352314c38dc146247b7de65735790f4398a92afa84b \
+            https://raw.githubusercontent.com/KhronosGroup/Vulkan-Docs/v1.4.339/LICENSES/MIT.txt \
+            /opt/fs25/wine-source/Vulkan-Docs-MIT.txt
 
 RUN         apt update \
             && apt install -y --no-install-recommends \
                 build-essential mingw-w64 \
-                autoconf bison flex pkg-config \
+                autoconf bison flex perl pkg-config python3 \
                 libasound2-dev libavcodec-dev libavformat-dev libavutil-dev \
                 libcups2-dev libdbus-1-dev libegl-dev \
                 libfontconfig1-dev libfreetype-dev libgl-dev libgnutls28-dev \
@@ -22,16 +32,33 @@ RUN         apt update \
                 libudev-dev libusb-1.0-0-dev libvulkan-dev \
                 libx11-dev libxcomposite-dev libxcursor-dev libxext-dev \
                 libxfixes-dev libxi-dev libxinerama-dev libxrandr-dev libxrender-dev \
-            && mkdir -p /tmp/wine-source /tmp/wine-build \
+            && apt clean \
+            && rm -rf /var/lib/apt/lists/*
+
+# Valve's Git archive omits generated Vulkan and syscall sources.
+# Prepare all of them with the upstream tools before makedep scans includes.
+RUN         mkdir -p /tmp/wine-source /tmp/wine-build \
             && tar -xzf /opt/fs25/wine-source/valve-wine.tar.gz -C /tmp/wine-source --strip-components=1 \
             && cp /tmp/wine-source/COPYING.LIB /tmp/wine-source/LICENSE /tmp/wine-source/AUTHORS /opt/fs25/wine-source/ \
             && printf 'Wine version 11.0-fs25-proton-dc26e61\n' > /tmp/wine-source/VERSION \
             && cp /tmp/wine-source/VERSION /opt/fs25/wine-source/VERSION.fs25 \
             && chmod 0444 /opt/fs25/wine-source/* \
-            && cd /tmp/wine-source && autoreconf -f \
-            && cd /tmp/wine-build \
+            && cd /tmp/wine-source \
+            && XDG_CACHE_HOME=/tmp/fs25-wine-cache python3 dlls/winevulkan/make_vulkan \
+                -x /opt/fs25/wine-source/vk.xml -X /opt/fs25/wine-source/video.xml \
+            && perl tools/make_specfiles \
+            && perl tools/make_requests \
+            && test -s include/wine/vulkan.h \
+            && test -s dlls/ntdll/ntsyscalls.h \
+            && test -s dlls/win32u/win32syscalls.h \
+            && autoreconf -fiv
+
+RUN         cd /tmp/wine-build \
             && CFLAGS='-O2 -march=x86-64' /tmp/wine-source/configure \
                 --prefix=/opt/fs25/wine --enable-archs=i386,x86_64 --with-mingw=yes --disable-tests --without-wayland \
+            || { cat /tmp/wine-build/config.log; exit 1; }
+
+RUN         cd /tmp/wine-build \
             && make -j"${WINE_BUILD_JOBS}" \
             && make install
 
