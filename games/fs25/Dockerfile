@@ -16,7 +16,7 @@ RUN         apt update \
                 autoconf bison flex pkg-config \
                 libasound2-dev libavcodec-dev libavformat-dev libavutil-dev \
                 libcups2-dev libdbus-1-dev libegl-dev \
-                libfontconfig1-dev libfreetype6-dev libgl-dev libgnutls28-dev \
+                libfontconfig1-dev libfreetype-dev libgl-dev libgnutls28-dev \
                 libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
                 libkrb5-dev libpcap-dev libpulse-dev libsdl2-dev \
                 libudev-dev libusb-1.0-0-dev libvulkan-dev \
@@ -43,13 +43,14 @@ LABEL       org.opencontainers.image.authors="Eric <DasEric@users.noreply.github
 
 USER        root
 
+# Let Debian select its FFmpeg library ABI instead of pinning release-specific package names.
 RUN         apt update \
             && apt install -y --no-install-recommends \
                 dbus-x11 \
+                ffmpeg \
                 firefox-esr \
                 fonts-dejavu-core \
                 libarchive-tools \
-                libavcodec59 libavformat59 libavutil57 \
                 netcat-openbsd \
                 novnc \
                 p7zip-full \
