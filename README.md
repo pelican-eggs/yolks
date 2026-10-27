@@ -196,6 +196,8 @@ is tagged correctly.
   * `ghcr.io/pelican-eggs/yolks:java_25`
 * [`java26`](/java/26)
   * `ghcr.io/pelican-eggs/yolks:java_26`
+* [`java27`](/java/27)
+  * `ghcr.io/pelican-eggs/yolks:java_27`
 
 ### [MariaDB](/mariadb)
 
