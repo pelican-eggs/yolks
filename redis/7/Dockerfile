@@ -3,7 +3,7 @@
 # ----------------------------------
 FROM    --platform=$TARGETOS/$TARGETARCH redis:7-bookworm
 
-LABEL   author="Michael Parker" maintainer="parker@pterodactyl.io"
+LABEL   author="Michael Parker" maintainer="parker@pelican.dev"
 
 ENV     DEBIAN_FRONTEND=noninteractive
 

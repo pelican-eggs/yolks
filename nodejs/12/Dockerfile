@@ -1,6 +1,6 @@
 FROM        --platform=$TARGETOS/$TARGETARCH node:12-bullseye-slim
 
-LABEL       author="Michael Parker" maintainer="parker@pterodactyl.io"
+LABEL       author="Michael Parker" maintainer="parker@pelican.dev"
 
 # add container user and set stop signal
 RUN         useradd -m -d /home/container container

@@ -3,9 +3,9 @@
 # ----------------------------------
 FROM --platform=$TARGETOS/$TARGETARCH postgres:12-alpine
 
-LABEL author="Parker" maintainer="parker@pterodactyl.io"
+LABEL author="Parker" maintainer="parker@pelican.dev"
 
-# UID 999 is the default pterodactyl user
+# UID 999 is the default pelican user
 RUN adduser -D -h /home/container container
 
 RUN     apk add --no-cache tini curl iproute2 ca-certificates fontconfig git openssl sqlite tar tzdata

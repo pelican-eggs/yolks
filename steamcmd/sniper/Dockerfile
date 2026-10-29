@@ -4,7 +4,7 @@
 FROM         --platform=$TARGETOS/$TARGETARCH registry.gitlab.steamos.cloud/steamrt/sniper/platform:latest-container-runtime-depot
 
 LABEL       author="Alexander Ballauf" maintainer="admin@ballaual.de"
-LABEL       org.opencontainers.image.description SteamRT3 Platform image for Pterodactyl Source engine servers. 
+LABEL       org.opencontainers.image.description SteamRT3 Platform image for Pelican Source engine servers. 
 
 # Install required packages
 RUN         dpkg --add-architecture i386 \

@@ -1,6 +1,6 @@
 FROM          --platform=$TARGETOS/$TARGETARCH python:3.11-slim-bookworm
 
-LABEL         author="Michael Parker" maintainer="parker@pterodactyl.io"
+LABEL         author="Michael Parker" maintainer="parker@pelican.dev"
 
 
 RUN           mkdir -p /usr/share/man/man1

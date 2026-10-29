@@ -1,9 +1,9 @@
 # -----------------------------------------------------
-# MariaDB Image for Pterodactyl
+# MariaDB Image for Pelican
 # -----------------------------------------------------
 FROM        --platform=$TARGETOS/$TARGETARCH mariadb:10.4
 
-LABEL       author="Michael Parker" maintainer="parker@pterodactyl.io"
+LABEL       author="Michael Parker" maintainer="parker@pelican.dev"
 
 ENV         DEBIAN_FRONTEND=noninteractive
 
