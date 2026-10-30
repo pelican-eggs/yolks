@@ -123,6 +123,12 @@ is tagged correctly.
   * `ghcr.io/pelican-eggs/yolks:erlang_23`
 * [`erlang24`](/erlang/24)
   * `ghcr.io/pelican-eggs/yolks:erlang_24`
+* [`erlang25`](/erlang/25)
+  * `ghcr.io/pelican-eggs/yolks:erlang_25`
+* [`erlang26`](/erlang/26)
+  * `ghcr.io/pelican-eggs/yolks:erlang_26`
+* [`erlang27`](/erlang/27)
+  * `ghcr.io/pelican-eggs/yolks:erlang_27`
 
 ### [Games](/games)
 
