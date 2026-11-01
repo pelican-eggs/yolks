@@ -69,6 +69,7 @@ RUN         cd /tmp/ \
 RUN         useradd -m -d /home/container -s /bin/bash container
 USER        container
 ENV         USER=container HOME=/home/container
+ENV         XVFB=1
 WORKDIR     /home/container
 
 STOPSIGNAL  SIGINT

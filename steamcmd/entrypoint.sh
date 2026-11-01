@@ -33,6 +33,21 @@ export TZ
 INTERNAL_IP=$(ip route get 1 | awk '{print $(NF-2);exit}')
 export INTERNAL_IP
 
+# Start a virtual X display if XVFB=1
+if [ "${XVFB}" == "1" ] && [ -z "${DISPLAY}" ]; then
+    # Clear a stale lock if /tmp survived a restart
+    if [ "$(cat /proc/$(tr -d ' ' < /tmp/.X42-lock 2>/dev/null)/comm 2>/dev/null)" != "Xvfb" ]; then
+        rm -f /tmp/.X42-lock /tmp/.X11-unix/X42
+    fi
+    Xvfb :42 -screen 0 ${DISPLAY_WIDTH:-1024}x${DISPLAY_HEIGHT:-768}x${DISPLAY_DEPTH:-24} -nolisten tcp >/dev/null 2>&1 &
+    export DISPLAY=:42
+    # Wait up to 5s for it to be ready
+    for _ in $(seq 1 50); do
+        [ -e /tmp/.X11-unix/X42 ] && break
+        sleep 0.1
+    done
+fi
+
 # Set environment for Steam Proton
 if [ -f "/usr/local/bin/proton" ]; then
     if [ ! -z ${SRCDS_APPID} ]; then
