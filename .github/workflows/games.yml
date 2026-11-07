@@ -22,6 +22,7 @@ jobs:
           - altv
           - arma3
           - dayz
+          - fs25
           - mohaa
           - rust
           - samp

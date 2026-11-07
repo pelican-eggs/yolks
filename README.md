@@ -138,6 +138,9 @@ is tagged correctly.
   * `ghcr.io/pelican-eggs/games:arma3`
 * [`dayz`](/games/dayz)
   * `ghcr.io/pelican-eggs/games:dayz`
+* [`Farming Simulator 25`](/games/fs25)
+  * `ghcr.io/pelican-eggs/games:fs25` (Linux amd64)
+  * [FS25 runtime project](https://github.com/DasEric/fs25-docker)
 * [`hytale`](/games/hytale)
   * `ghcr.io/pelican-eggs/games:hytale`
 * [`minetest`](/games/minetest)
