@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+if [ -d /home/container/.windrose-game ]; then
+    test ! -L /home/container/.windrose-game
+    cd /home/container/.windrose-game
+else
+    cd /home/ue_user/app
+fi
+exec ./R5/Binaries/Linux/WindroseServer-Linux-Shipping R5

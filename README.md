@@ -156,6 +156,8 @@ is tagged correctly.
   * `ghcr.io/pelican-eggs/games:thebattleforwesnoth`
 * [`valheim`](/games/valheim)
   * `ghcr.io/pelican-eggs/games:valheim`
+* [`windrose`](/games/windrose) (linux/amd64)
+  * `ghcr.io/pelican-eggs/games:windrose`
 * [`zandronum`](/games/zandronum)
   * `ghcr.io/pelican-eggs/games:zandronum`
 
